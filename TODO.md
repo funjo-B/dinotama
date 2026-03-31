@@ -1,79 +1,124 @@
 # DinoTama - TODO
 
-## Sprint 1: 프로젝트 초기 설정 ✅ (Complete)
-- [x] CLAUDE.md 생성
-- [x] TODO.md 생성
+## 완료된 스프린트
+
+### Sprint 1: 프로젝트 초기 설정 ✅
+- [x] CLAUDE.md / TODO.md 생성
 - [x] 폴더 구조 설계 및 생성
-- [x] package.json 초기 설정
-- [x] TypeScript 설정 (tsconfig.json + tsconfig.main.json)
-- [x] Vite 설정 (vite.config.ts)
-- [x] 공유 타입 정의 (src/shared/types)
-- [x] 공유 상수 정의 (src/shared/constants)
-- [x] Electron 메인 프로세스 (src/main/index.ts)
-- [x] Preload 스크립트 (src/main/preload.ts)
+- [x] package.json / TypeScript / Vite 설정
+- [x] 공유 타입 & 상수 정의 (src/shared)
+- [x] Electron 메인 프로세스 (src/main)
 - [x] React 엔트리 (src/renderer)
-- [x] DinoCanvas 컴포넌트
-- [x] Zustand 스토어 (가챠 + 천장제 포함)
-- [x] .gitignore 설정
-- [ ] ESLint / Prettier 설정
-- [ ] npm install & 빌드 테스트
+- [x] DinoCanvas 컴포넌트 + Zustand 스토어
 
-## Sprint 2: Electron 메인 프로세스 (dev-agent) ✅ Complete
-- [x] 투명 BrowserWindow 생성 (window.ts)
-- [x] always-on-top 설정 (screen-saver level)
-- [x] 모서리 고정 로직 (snap-to-edge IPC)
-- [x] 드래그 이동 구현 (IPC drag-start/drag-move + useDrag hook)
-- [x] 시스템 트레이 아이콘 (tray.ts, fallback icon 포함)
-- [x] 딥링크(dinotama://auth) 처리 (deeplink.ts)
-- [x] IPC 채널 설계 (preload.ts — dino: prefix)
-- [x] 우클릭 컨텍스트 메뉴 (밥주기/놀아주기/알뽑기/상태보기)
-- [x] 스탯 오버레이 UI (hover시 표시)
+### Sprint 2: Electron 메인 프로세스 ✅
+- [x] 투명 BrowserWindow (always-on-top)
+- [x] 드래그 이동 + 모서리 고정
+- [x] 시스템 트레이 + 딥링크
+- [x] 우클릭 컨텍스트 메뉴 + 스탯 오버레이
 
-## Sprint 3: 게임 로직 (game-agent) ✅ Complete
-- [x] Zustand 스토어 설계 (dinoStore.ts)
-- [x] 공룡 성장 FSM (growthFSM.ts — egg→baby→teen→adult)
-- [x] 스탯 시스템 (hunger/happiness/fatigue + 시간 디케이)
-- [x] 감정 트리거 시스템 (emotionEngine.ts — 규칙기반 + 이벤트 트리거)
-- [x] 가챠 확률 시스템 구현 (rollRarity)
-- [x] 천장제 로직 (50회 Epic / 100회 Legend)
-- [x] 게임 루프 (useGameLoop — 1분 주기 tick)
-- [x] 감정별 애니메이션 (6종: idle/happy/sad/hungry/sleepy/excited)
+### Sprint 3: 게임 로직 ✅
+- [x] 성장 FSM (egg→baby→teen→adult)
+- [x] 스탯 시스템 (hunger/happiness/fatigue)
+- [x] 감정 트리거 + 가챠 확률 + 천장제
 
-## Sprint 4: UI & 애니메이션 (asset-agent) ✅ Complete
-- [x] public/assets 폴더 구조 설계 (egg/baby/teen/adult + rive + icons)
-- [x] 스프라이트 네이밍 규칙 적용 (README.md with convention)
-- [x] DinoCanvas 컴포넌트 (sprite animation with emotion variants)
-- [x] Framer Motion 감정별 애니메이션 (6종 TargetAndTransition)
-- [ ] Rive 애니메이션 통합 (에셋 준비 후)
-- [ ] 실제 스프라이트 에셋 제작/배치
+### Sprint 4: UI & 애니메이션 (부분 완료)
+- [x] 스프라이트 구조 + DinoCanvas + Framer Motion
+- [ ] Rive 애니메이션 통합
+- [ ] 실제 스프라이트 에셋 제작 (현재 placeholder)
 
-## Sprint 5: 알림 시스템 (notify-agent) ✅ Complete
-- [x] Google Calendar API 연동 (calendar.ts)
-- [x] 일정 5분 전 알림 스케줄러 (1분 주기 polling)
-- [x] 알림 팝업 UI (NotificationPopup.tsx)
-- [x] OK/SNOOZE 버튼 구현
-- [x] 감정 트리거 연결 (OK→happy 5초, SNOOZE→sad 3초)
-- [x] IPC calendar-set-credentials / calendar-stop
+### Sprint 5: 알림 시스템 ✅
+- [x] Google Calendar API 연동 + 알림 팝업 UI
 
-## Sprint 6: Firebase 연동 (notify-agent) ✅ Complete
-- [x] Firebase 서비스 모듈 (firebase.ts)
-- [x] Google 로그인 (signInWithCredential)
-- [x] Firestore 데이터 모델 (users/{uid})
-- [x] 30분 자동저장 스케줄러 (startAutoSync)
-- [x] 이벤트 발생 시 즉시 동기화 (syncNow)
-- [ ] Firebase config 환경변수 설정 (실제 프로젝트 생성 후)
+### Sprint 6: Firebase 연동 ✅
+- [x] Firebase 프로젝트 생성 (dinotama-dff44)
+- [x] Authentication (Google 로그인) 활성화
+- [x] Firestore Database 활성화
+- [x] firebase.ts → 환경변수(import.meta.env) 연결
+- [x] .env / .env.example 구성
 
-## Sprint 7: 결제 시스템 (game-agent) ✅ Complete
-- [x] Stripe 서비스 모듈 (stripe.ts)
-- [x] 고급알 상품 정의 (1/5/11개 패키지)
-- [x] Checkout 플로우 스캐폴드
-- [ ] 백엔드 Checkout Session 생성 (서버 필요)
-- [ ] 결제 완료 webhook → 가챠 트리거
-- [ ] Stripe publishable key 설정
+### Sprint 7: 결제 시스템 (스캐폴드만)
+- [x] Stripe 서비스 모듈 구조
+- [ ] 실제 결제 로직 미구현 (아래 참조)
 
-## Sprint 8: 빌드 & 배포 (dev-agent)
-- [ ] electron-builder 설정
-- [ ] Windows NSIS 인스톨러
-- [ ] macOS DMG 빌드
-- [ ] 자동 업데이트 (electron-updater)
-- [ ] GitHub Releases 배포
+---
+
+## 남은 작업 (우선순위순)
+
+### 🔴 1순위 — 핵심 기능 완성
+
+#### Google Calendar OAuth 완성
+- [ ] Google Cloud Console에서 OAuth 2.0 클라이언트 ID 생성
+- [ ] client_id, client_secret을 .env에 추가
+- [ ] calendar.ts의 OAuth2Client에 credentials 연결
+- **담당**: dev-agent / notify-agent
+
+#### 환경변수 정리
+- [ ] .env에 Google OAuth 키 추가 (VITE_GOOGLE_CLIENT_ID 등)
+- [ ] .env.example 업데이트
+- **담당**: dev-agent
+
+### 🟠 2순위 — 결제 시스템
+
+#### Stripe 결제 연동
+- [ ] Stripe 계정 생성 + publishable key 발급
+- [ ] 고급알 상품 3종 priceId 설정
+- [ ] 백엔드 서버 구축 (Checkout Session 생성)
+- [ ] 결제 완료 webhook → 가챠 트리거 연결
+- [ ] .env에 Stripe 키 추가
+- **담당**: game-agent
+
+### 🟡 3순위 — 품질 & 안정성
+
+#### ESLint / Prettier 설정
+- [ ] .eslintrc.js + .prettierrc 생성
+- [ ] npm run lint 동작 확인
+- **담당**: dev-agent
+
+#### 테스트 코드 작성
+- [ ] growthFSM 단위 테스트
+- [ ] dinoStore 단위 테스트
+- [ ] emotionEngine 단위 테스트
+- [ ] 가챠 확률 / 천장제 테스트
+- **담당**: game-agent
+
+#### 에러 핸들링 강화
+- [ ] Firebase 동기화 실패 시 재시도 로직
+- [ ] 사용자에게 에러 UI 표시
+- [ ] TodoPanel Firebase 연동 (현재 로컬 state만)
+- **담당**: notify-agent
+
+### 🔵 4순위 — 빌드 & 배포
+
+#### 빌드 완성
+- [ ] 앱 아이콘 제작 (icon.ico / icon.icns)
+- [ ] Windows NSIS 인스톨러 테스트
+- [ ] macOS DMG 빌드 테스트
+- **담당**: dev-agent
+
+#### 자동 업데이트 & 배포
+- [ ] electron-updater 설정
+- [ ] GitHub Releases 배포 자동화
+- [ ] Windows/macOS 코드 서명
+- **담당**: dev-agent
+
+### ⚪ 5순위 — 고도화
+
+#### 애니메이션 개선
+- [ ] Rive 애니메이션 라이브러리 통합
+- [ ] 실제 스프라이트 에셋 제작/교체
+- **담당**: asset-agent
+
+---
+
+## 현재 상태 요약
+- **Firebase**: ✅ 연결 완료 (Authentication + Firestore 활성화)
+- **Electron**: ✅ 기본 동작 (프로덕션 빌드 경로 수정 완료)
+- **게임 로직**: ✅ FSM/스탯/가챠/감정 구현 완료
+- **Calendar**: ⚠️ API 코드 있으나 OAuth 미설정
+- **Stripe**: ⚠️ 스캐폴드만 (키/백엔드 없음)
+- **테스트/린트**: ❌ 미구현
+
+## 환경 설정 메모
+- `.env` 파일은 git에 포함 안됨 — 새 환경에서 `.env.example` 복사 후 키값 채워야 함
+- Firebase Console: https://console.firebase.google.com (프로젝트: dinotama-dff44)
