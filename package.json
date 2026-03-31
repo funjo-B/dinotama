@@ -1,0 +1,75 @@
+{
+  "name": "dinotama",
+  "version": "0.1.0",
+  "description": "Desktop Dinosaur Tamagotchi - 모니터 구석의 공룡 다마고치",
+  "main": "dist/main/main/index.js",
+  "author": "DinoTama Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/electron-dev.js",
+    "dev:web": "vite src/renderer",
+    "dev:main": "tsc -p tsconfig.main.json --watch",
+    "dev:renderer": "vite",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "vite build",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "start": "electron dist/main/main/index.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5",
+    "framer-motion": "^11.11.0",
+    "firebase": "^10.14.0",
+    "@stripe/stripe-js": "^4.8.0",
+    "node-notifier": "^10.0.1",
+    "googleapis": "^144.0.0",
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/node": "^22.9.0",
+    "eslint": "^9.14.0",
+    "vitest": "^2.1.5",
+    "prettier": "^3.4.1"
+  },
+  "build": {
+    "appId": "com.dinotama.app",
+    "productName": "DinoTama",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "public/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/assets/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/assets/icons/icon.icns"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "protocols": {
+      "name": "DinoTama",
+      "schemes": ["dinotama"]
+    }
+  }
+}
