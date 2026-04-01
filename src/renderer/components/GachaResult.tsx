@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Dino, DinoRarity } from '@shared/types';
-import { SPECIES_DEFS } from '@shared/constants';
+import { SPECIES_DEFS, REAL_SPRITE_SPECIES } from '@shared/constants';
 
 const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; bg: string }> = {
-  common: { label: '★ Common', color: '#9ca3af', bg: 'rgba(156,163,175,0.2)' },
-  rare: { label: '★★ Rare', color: '#60a5fa', bg: 'rgba(96,165,250,0.2)' },
-  epic: { label: '★★★ Epic', color: '#c084fc', bg: 'rgba(192,132,252,0.2)' },
-  legend: { label: '★★★★ Legend', color: '#fbbf24', bg: 'rgba(251,191,36,0.2)' },
+  common: { label: '★ Common',     color: '#9ca3af', bg: 'rgba(156,163,175,0.2)' },
+  rare:   { label: '★★ Rare',     color: '#60a5fa', bg: 'rgba(96,165,250,0.2)'  },
+  epic:   { label: '★★★ Epic',    color: '#c084fc', bg: 'rgba(192,132,252,0.2)' },
+  legend: { label: '★★★★ Legend', color: '#fbbf24', bg: 'rgba(251,191,36,0.2)'  },
+  hidden: { label: '✦ Hidden',     color: '#ff6b6b', bg: 'rgba(255,107,107,0.2)' },
 };
 
 interface GachaResultProps {
@@ -56,7 +57,7 @@ export function GachaResult({ dino, onClose }: GachaResultProps) {
               src={`./assets/sprites/baby/${dino.species}/sprite_baby_idle_01.png`}
               width={20}
               height={20}
-              style={{ imageRendering: 'pixelated' }}
+              style={{ imageRendering: REAL_SPRITE_SPECIES.has(dino.species) ? 'auto' : 'pixelated' }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span>{SPECIES_DEFS[dino.species]?.nameKo ?? '???'} 부화!</span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DinoStage, DinoSpeciesId, DinoRarity } from '@shared/types';
-import { SPECIES_DEFS } from '@shared/constants';
+import { SPECIES_DEFS, REAL_SPRITE_SPECIES } from '@shared/constants';
 import { useT, useSpeciesName } from '../hooks/useT';
 
 interface MergeAnimationProps {
@@ -74,7 +74,7 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
                     src={`./assets/sprites/${fromStage}/${species}/sprite_${fromStage}_idle_01.png`}
                     width={40}
                     height={40}
-                    style={{ imageRendering: 'pixelated' }}
+                    style={{ imageRendering: species && REAL_SPRITE_SPECIES.has(species) ? 'auto' : 'pixelated' }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                       (e.target as HTMLImageElement).parentElement!.textContent = STAGE_EMOJI[fromStage];

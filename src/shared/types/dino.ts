@@ -2,12 +2,24 @@ export type DinoStage = 'egg' | 'baby' | 'teen' | 'adult';
 
 export type DinoEmotion = 'idle' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited';
 
-export type DinoRarity = 'common' | 'rare' | 'epic' | 'legend';
+export type DinoRarity = 'common' | 'rare' | 'epic' | 'legend' | 'hidden';
 
 export type DinoSpeciesId =
-  | 'raptor' | 'trex' | 'pterodactyl' | 'triceratops'
-  | 'stegosaurus' | 'brachiosaurus' | 'ankylosaurus'
-  | 'parasaurolophus' | 'spinosaurus' | 'dilophosaurus';
+  // COMMON (8)
+  | 'stegosaurus' | 'parasaurolophus' | 'iguanodon' | 'dilophosaurus'
+  | 'compsognathus' | 'dimorphodon' | 'rhamphorhynchus' | 'ichthyosaurus'
+  // RARE (8)
+  | 'triceratops' | 'ankylosaurus' | 'pachycephalosaurus' | 'allosaurus'
+  | 'carnotaurus' | 'pteranodon' | 'plesiosaurus' | 'kronosaurus'
+  // EPIC (7)
+  | 'brachiosaurus' | 'stegoceras' | 'spinosaurus' | 'baryonyx'
+  | 'quetzalcoatlus' | 'mosasaurus' | 'elasmosaurus'
+  // LEGEND (5)
+  | 'argentinosaurus' | 'tyrannosaurus' | 'giganotosaurus' | 'velociraptor' | 'tupuxuara'
+  // HIDDEN (1)
+  | 'chicken';
+
+export type DinoDiet = 'herbivore' | 'carnivore' | 'flyer' | 'aquatic' | 'special';
 
 export interface DinoSpeciesDef {
   id: DinoSpeciesId;
@@ -15,6 +27,7 @@ export interface DinoSpeciesDef {
   nameEn: string;
   rarity: DinoRarity;
   baseColor: string;
+  diet: DinoDiet;
 }
 
 export interface DinoStats {
@@ -43,6 +56,7 @@ export interface GachaState {
   totalPulls: number;
   pullsSinceEpic: number;
   pullsSinceLegend: number;
+  pullsSinceHidden: number;
 }
 
 export interface TodoItem {

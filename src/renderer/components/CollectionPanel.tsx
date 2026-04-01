@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
-import { SPECIES_DEFS, SELL_PRICES } from '@shared/constants';
+import { SPECIES_DEFS, SELL_PRICES, STAGE_SELL_MULTIPLIER } from '@shared/constants';
 import type { Dino, DinoStage, DinoSpeciesId } from '@shared/types';
 import { MergeAnimation } from './MergeAnimation';
 import { useT, useSpeciesName } from '../hooks/useT';
@@ -10,6 +10,12 @@ interface DinoGroup {
   species: DinoSpeciesId;
   stage: DinoStage;
   dinos: Dino[];
+}
+
+interface CollectionPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAction?: (action: string, payload?: unknown) => void;
 }
 
 export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelProps) {
@@ -40,7 +46,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
       map.get(key)!.dinos.push(dino);
     }
     // Sort: legend first, then by species name
-    const rarityOrder = { legend: 0, epic: 1, rare: 2, common: 3 };
+    const rarityOrder: Record<string, number> = { hidden: 0, legend: 1, epic: 2, rare: 3, common: 4 };
     return Array.from(map.values()).sort((a, b) => {
       const ra = rarityOrder[SPECIES_DEFS[a.species]?.rarity ?? 'common'];
       const rb = rarityOrder[SPECIES_DEFS[b.species]?.rarity ?? 'common'];
@@ -71,6 +77,8 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
         case 'sellDino': store.sellDino(args[0]); break;
         case 'setActiveDino': store.setActiveDino(args[0]); break;
         case 'renameDino': store.renameDino(args[0], args[1]); break;
+        case 'clearAllDinos': store.clearAllDinos(); break;
+        case 'generateAllSpecies': store.generateAllSpecies(); break;
       }
     }
   }, [onAction]);
@@ -100,9 +108,10 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
 
   const RARITY_COLORS: Record<string, string> = {
     common: '#9ca3af',
-    rare: '#60a5fa',
-    epic: '#c084fc',
+    rare:   '#60a5fa',
+    epic:   '#c084fc',
     legend: '#fbbf24',
+    hidden: '#ff6b6b',
   };
 
   if (!isOpen) return null;
@@ -163,7 +172,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
             display: 'flex',
             gap: 4,
           }}>
-            {(['all', 'egg', 'baby', 'teen', 'adult'] as const).map((v) => {
+            {(['all', 'baby', 'teen', 'adult'] as const).map((v) => {
               const label = v === 'all' ? t.collection.all : t.collection.stageFilter[v];
               return (
                 <button
@@ -368,7 +377,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                                 onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(248,113,113,0.1)')}
                                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                               >
-                                {t.collection.sell(SELL_PRICES[contextMenu.dino.rarity])}
+                                {t.collection.sell(SELL_PRICES[contextMenu.dino.rarity] * (STAGE_SELL_MULTIPLIER[contextMenu.dino.stage] ?? 1))}
                               </div>
                             )}
                           </div>
@@ -379,6 +388,52 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                 </div>
               );
             })}
+          </div>
+
+          {/* 테스트 도구 */}
+          <div style={{
+            padding: '10px 12px',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            gap: 6,
+            flexShrink: 0,
+          }}>
+            <button
+              onClick={() => {
+                if (window.confirm('보유한 공룡을 모두 삭제할까요?')) {
+                  dispatch('clearAllDinos');
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                border: '1px solid rgba(248,113,113,0.4)',
+                borderRadius: 6,
+                background: 'rgba(248,113,113,0.08)',
+                color: '#f87171',
+                fontSize: 10,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              🗑️ 전체 삭제
+            </button>
+            <button
+              onClick={() => dispatch('generateAllSpecies')}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                border: '1px solid rgba(96,165,250,0.4)',
+                borderRadius: 6,
+                background: 'rgba(96,165,250,0.08)',
+                color: '#60a5fa',
+                fontSize: 10,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              🧬 전종 생성
+            </button>
           </div>
 
           {/* Merge animation overlay */}

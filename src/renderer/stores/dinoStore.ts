@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Dino, DinoEmotion, DinoRarity, DinoSpeciesId, DinoStage, DinoStats, GachaState } from '@shared/types';
-import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES } from '@shared/constants';
+import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MULTIPLIER, SPECIES_DEFS } from '@shared/constants';
 
 // Debounced cloud sync — saves after important actions
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -53,15 +53,19 @@ interface DinoStore {
   loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
   getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold: number };
   resetState: () => void;
+  // 테스트용
+  clearAllDinos: () => void;
+  generateAllSpecies: () => void;
 }
 
 function rollRarity(gacha: GachaState): DinoRarity {
+  if ((gacha.pullsSinceHidden ?? 0) >= PITY_THRESHOLDS.hidden) return 'hidden';
   if (gacha.pullsSinceLegend >= PITY_THRESHOLDS.legend) return 'legend';
   if (gacha.pullsSinceEpic >= PITY_THRESHOLDS.epic) return 'epic';
 
   const roll = Math.random();
   let cumulative = 0;
-  const rarities: DinoRarity[] = ['legend', 'epic', 'rare', 'common'];
+  const rarities: DinoRarity[] = ['hidden', 'legend', 'epic', 'rare', 'common'];
   for (const rarity of rarities) {
     cumulative += GACHA_RATES[rarity];
     if (roll < cumulative) return rarity;
@@ -74,14 +78,25 @@ function rollSpecies(rarity: DinoRarity): DinoSpeciesId {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Old → new species mapping (removed species from v1 10-species system)
+const LEGACY_SPECIES_MAP: Record<string, DinoSpeciesId> = {
+  raptor:    'dilophosaurus',  // was common carnivore → dilophosaurus (common carnivore)
+  trex:      'tyrannosaurus',  // was legend → tyrannosaurus (legend)
+  pterodactyl: 'pteranodon',   // was epic flyer → pteranodon (rare flyer)
+};
+
 function migrateDino(dino: any): Dino {
-  // Migrate old species format
+  // Migrate old species format (species_XXX string)
   let species = dino.species;
   if (typeof species === 'string' && species.startsWith('species_')) {
     const rarityStr = species.replace('species_', '') as DinoRarity;
     const pool = SPECIES_POOL[rarityStr] ?? SPECIES_POOL.common;
     const hash = dino.id.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
     species = pool[hash % pool.length];
+  }
+  // Migrate removed legacy species IDs → new equivalents
+  if (species in LEGACY_SPECIES_MAP) {
+    species = LEGACY_SPECIES_MAP[species as string];
   }
 
   // Strip old fields (stats, emotion, lastFedTime, lastPlayTime)
@@ -90,20 +105,20 @@ function migrateDino(dino: any): Dino {
     name: dino.name,
     species,
     rarity: dino.rarity,
-    stage: dino.stage ?? 'egg',
+    stage: dino.stage === 'egg' ? 'baby' : (dino.stage ?? 'baby'),  // egg → baby 마이그레이션
     birthTime: dino.birthTime ?? Date.now(),
     stageProgress: dino.stageProgress ?? 0,
   };
 }
 
-function createDino(rarity: DinoRarity): Dino {
-  const species = rollSpecies(rarity);
+function createDino(rarity: DinoRarity, speciesOverride?: DinoSpeciesId): Dino {
+  const species = speciesOverride ?? rollSpecies(rarity);
   return {
     id: crypto.randomUUID(),
     name: `Dino-${Date.now().toString(36)}`,
     species,
     rarity,
-    stage: 'egg',
+    stage: 'baby',   // 알 단계 제거 — 가챠 결과는 바로 유년기
     birthTime: Date.now(),
     stageProgress: 0,
   };
@@ -115,7 +130,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   activeDino: null,
   coins: 100,
   premiumCurrency: 0,
-  gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+  gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0, pullsSinceHidden: 0 },
   totalSold: 0,
 
   // Local-only
@@ -186,8 +201,9 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
 
     const newGacha: GachaState = {
       totalPulls: state.gacha.totalPulls + 1,
-      pullsSinceEpic: rarity === 'epic' || rarity === 'legend' ? 0 : state.gacha.pullsSinceEpic + 1,
-      pullsSinceLegend: rarity === 'legend' ? 0 : state.gacha.pullsSinceLegend + 1,
+      pullsSinceEpic: rarity === 'epic' || rarity === 'legend' || rarity === 'hidden' ? 0 : state.gacha.pullsSinceEpic + 1,
+      pullsSinceLegend: rarity === 'legend' || rarity === 'hidden' ? 0 : state.gacha.pullsSinceLegend + 1,
+      pullsSinceHidden: rarity === 'hidden' ? 0 : (state.gacha.pullsSinceHidden ?? 0) + 1,
     };
 
     set({
@@ -219,8 +235,9 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       results.push(dino);
       gacha = {
         totalPulls: gacha.totalPulls + 1,
-        pullsSinceEpic: rarity === 'epic' || rarity === 'legend' ? 0 : gacha.pullsSinceEpic + 1,
-        pullsSinceLegend: rarity === 'legend' ? 0 : gacha.pullsSinceLegend + 1,
+        pullsSinceEpic: rarity === 'epic' || rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceEpic + 1,
+        pullsSinceLegend: rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceLegend + 1,
+        pullsSinceHidden: rarity === 'hidden' ? 0 : (gacha.pullsSinceHidden ?? 0) + 1,
       };
     }
 
@@ -256,7 +273,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     if (!dino) return;
     if (state.dinos.length <= 1) return; // can't sell last dino
 
-    const price = SELL_PRICES[dino.rarity];
+    const price = SELL_PRICES[dino.rarity] * (STAGE_SELL_MULTIPLIER[dino.stage] ?? 1);
     const newDinos = state.dinos.filter((d) => d.id !== id);
 
     // If selling active dino, switch to first remaining
@@ -289,7 +306,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       activeDino,
       coins: data.coins,
       premiumCurrency: data.premiumCurrency,
-      gacha: data.gacha,
+      gacha: { ...data.gacha, pullsSinceHidden: (data.gacha as any).pullsSinceHidden ?? 0 },
       totalSold: data.totalSold ?? 0,
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
@@ -316,10 +333,43 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       activeDino: null,
       coins: 100,
       premiumCurrency: 0,
-      gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+      gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0, pullsSinceHidden: 0 },
       totalSold: 0,
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
     });
   },
+
+  // ── 테스트 전용 ────────────────────────────────────────────────────────────
+  clearAllDinos: () => {
+    set({
+      dinos: [],
+      activeDinoId: null,
+      activeDino: null,
+      activeStats: { ...DEFAULT_STATS },
+      activeEmotion: 'idle',
+    });
+    scheduleSync();
+  },
+
+  generateAllSpecies: () => {
+    const allSpecies = Object.values(SPECIES_DEFS);
+    const newDinos: Dino[] = allSpecies.map((def) => ({
+      id: crypto.randomUUID(),
+      name: def.nameKo,
+      species: def.id,
+      rarity: def.rarity,
+      stage: 'baby' as DinoStage,
+      birthTime: Date.now(),
+      stageProgress: 0,
+    }));
+    const first = newDinos[0] ?? null;
+    set((s) => ({
+      dinos: [...s.dinos, ...newDinos],
+      activeDinoId: s.activeDinoId ?? first?.id ?? null,
+      activeDino: s.activeDino ?? first,
+    }));
+    scheduleSync();
+  },
+
 }));

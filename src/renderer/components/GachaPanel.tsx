@@ -11,13 +11,14 @@ interface GachaPanelProps {
 }
 
 const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; stars: string }> = {
-  common: { label: 'Common', color: '#9ca3af', stars: '★' },
-  rare:   { label: 'Rare',   color: '#60a5fa', stars: '★★' },
-  epic:   { label: 'Epic',   color: '#c084fc', stars: '★★★' },
-  legend: { label: 'Legend',  color: '#fbbf24', stars: '★★★★' },
+  common: { label: 'Common', color: '#9ca3af', stars: '★'    },
+  rare:   { label: 'Rare',   color: '#60a5fa', stars: '★★'   },
+  epic:   { label: 'Epic',   color: '#c084fc', stars: '★★★'  },
+  legend: { label: 'Legend', color: '#fbbf24', stars: '★★★★' },
+  hidden: { label: 'Hidden', color: '#ff6b6b', stars: '✦'    },
 };
 
-const RARITY_ORDER: DinoRarity[] = ['legend', 'epic', 'rare', 'common'];
+const RARITY_ORDER: DinoRarity[] = ['hidden', 'legend', 'epic', 'rare', 'common'];
 
 export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
   const t = useT();
@@ -138,6 +139,7 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
       }}>
         <span>{t.gachaPanel.epicPity(gacha.pullsSinceEpic, PITY_THRESHOLDS.epic)}</span>
         <span>{t.gachaPanel.legendPity(gacha.pullsSinceLegend, PITY_THRESHOLDS.legend)}</span>
+        <span style={{ color: '#ff6b6b' }}>{t.gachaPanel.hiddenPity(gacha.pullsSinceHidden ?? 0, PITY_THRESHOLDS.hidden)}</span>
       </div>
 
       {/* Rates + Species list */}

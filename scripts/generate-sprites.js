@@ -826,6 +826,157 @@ const SPECIES = {
   },
 };
 
+// ─── Generic draw helpers for new species ───
+
+function drawAquatic(ctx, c, dc) {
+  // Streamlined body
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 5, 30, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Tail fin
+  ctx.beginPath();
+  ctx.moveTo(cx - 26, cy + 4);
+  ctx.lineTo(cx - 44, cy - 5);
+  ctx.lineTo(cx - 40, cy + 5);
+  ctx.lineTo(cx - 44, cy + 14);
+  ctx.closePath();
+  ctx.fill();
+  // Dorsal fin
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, cy - 6);
+  ctx.lineTo(cx + 6, cy - 20);
+  ctx.lineTo(cx + 14, cy - 6);
+  ctx.fill();
+  // Head
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 24, cy + 3, 10, 8, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  // Snout
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx + 30, cy + 1);
+  ctx.lineTo(cx + 44, cy + 3);
+  ctx.lineTo(cx + 32, cy + 6);
+  ctx.fill();
+  // Belly
+  ctx.fillStyle = adjustColor(c, 1.25);
+  ctx.beginPath();
+  ctx.ellipse(cx + 2, cy + 10, 22, 6, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  // Flippers
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy + 8);
+  ctx.lineTo(cx - 22, cy + 22);
+  ctx.lineTo(cx + 2, cy + 14);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + 10, cy + 8);
+  ctx.lineTo(cx + 22, cy + 22);
+  ctx.lineTo(cx + 16, cy + 14);
+  ctx.fill();
+}
+
+function drawChicken(ctx, c, dc) {
+  // Body
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx - 2, cy + 8, 18, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Fluffy tail
+  ctx.beginPath();
+  ctx.moveTo(cx - 14, cy + 4);
+  ctx.quadraticCurveTo(cx - 30, cy - 10, cx - 34, cy + 6);
+  ctx.quadraticCurveTo(cx - 28, cy + 16, cx - 14, cy + 14);
+  ctx.fill();
+  // Wing
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.ellipse(cx - 4, cy + 10, 12, 7, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  // Head
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 16, cy - 8, 9, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Comb
+  ctx.fillStyle = '#ef4444';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.ellipse(cx + 12 + i * 4, cy - 16 - (i === 1 ? 2 : 0), 3, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Wattle
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.ellipse(cx + 22, cy - 6, 3, 4, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Beak
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.moveTo(cx + 24, cy - 9);
+  ctx.lineTo(cx + 34, cy - 7);
+  ctx.lineTo(cx + 24, cy - 5);
+  ctx.fill();
+  // Legs
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cx + 2, cy + 22);
+  ctx.lineTo(cx + 2, cy + 36);
+  ctx.moveTo(cx + 10, cy + 22);
+  ctx.lineTo(cx + 10, cy + 36);
+  ctx.stroke();
+  // Feet claws
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx + 2, cy + 36); ctx.lineTo(cx - 5, cy + 40);
+  ctx.moveTo(cx + 2, cy + 36); ctx.lineTo(cx + 4, cy + 40);
+  ctx.moveTo(cx + 2, cy + 36); ctx.lineTo(cx + 8, cy + 38);
+  ctx.moveTo(cx + 10, cy + 36); ctx.lineTo(cx + 4, cy + 40);
+  ctx.moveTo(cx + 10, cy + 36); ctx.lineTo(cx + 12, cy + 40);
+  ctx.moveTo(cx + 10, cy + 36); ctx.lineTo(cx + 16, cy + 38);
+  ctx.stroke();
+}
+
+// Extend SPECIES with all 29 new species (reusing existing draw shapes where suitable)
+Object.assign(SPECIES, {
+  // ── COMMON extras ──────────────────────────────────────────────────────────
+  iguanodon:          { color: '#a3e635', eyeOffset: { x: 22, y: -8  }, draw: SPECIES.stegosaurus.draw    },
+  compsognathus:      { color: '#67e8f9', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  dimorphodon:        { color: '#7dd3fc', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+  rhamphorhynchus:    { color: '#93c5fd', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+  ichthyosaurus:      { color: '#60a5fa', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+
+  // ── RARE extras ────────────────────────────────────────────────────────────
+  pachycephalosaurus: { color: '#6366f1', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  allosaurus:         { color: '#f59e0b', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
+  carnotaurus:        { color: '#ef4444', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
+  pteranodon:         { color: '#06b6d4', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+  plesiosaurus:       { color: '#2dd4bf', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+  kronosaurus:        { color: '#0ea5e9', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+
+  // ── EPIC extras ────────────────────────────────────────────────────────────
+  stegoceras:         { color: '#d8b4fe', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  baryonyx:           { color: '#e879f9', eyeOffset: { x: 22, y: -12 }, draw: SPECIES.spinosaurus.draw    },
+  quetzalcoatlus:     { color: '#818cf8', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+  mosasaurus:         { color: '#a78bfa', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+  elasmosaurus:       { color: '#f9a8d4', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+
+  // ── LEGEND extras ──────────────────────────────────────────────────────────
+  argentinosaurus:    { color: '#fbbf24', eyeOffset: { x: 14, y: -48 }, draw: SPECIES.brachiosaurus.draw  },
+  tyrannosaurus:      { color: '#ef4444', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
+  giganotosaurus:     { color: '#dc2626', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
+  velociraptor:       { color: '#fb923c', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  tupuxuara:          { color: '#f59e0b', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+
+  // ── HIDDEN ─────────────────────────────────────────────────────────────────
+  chicken:            { color: '#ff6b6b', eyeOffset: { x: 14, y: -10 }, draw(ctx, c, dc) { drawChicken(ctx, c, dc); } },
+});
+
 // ─── Egg ───
 function drawEgg(ctx, color, emotion) {
   const mod = EMOTION_MODS[emotion];

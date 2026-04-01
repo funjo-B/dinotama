@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Dino, DinoRarity } from '@shared/types';
-import { SPECIES_DEFS } from '@shared/constants';
+import { SPECIES_DEFS, REAL_SPRITE_SPECIES } from '@shared/constants';
 import { useT, useSpeciesName } from '../hooks/useT';
 
 interface GachaMultiAnimationProps {
@@ -11,16 +11,18 @@ interface GachaMultiAnimationProps {
 
 const RARITY_COLORS: Record<DinoRarity, string> = {
   common: '#9ca3af',
-  rare: '#60a5fa',
-  epic: '#c084fc',
+  rare:   '#60a5fa',
+  epic:   '#c084fc',
   legend: '#fbbf24',
+  hidden: '#ff6b6b',
 };
 
 const RARITY_LABELS: Record<DinoRarity, string> = {
   common: '★',
-  rare: '★★',
-  epic: '★★★',
+  rare:   '★★',
+  epic:   '★★★',
   legend: '★★★★',
+  hidden: '✦',
 };
 
 export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationProps) {
@@ -43,8 +45,10 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
     return () => clearTimeout(t);
   }, [legendFlashing]);
 
+  const isSpecial = (rarity: DinoRarity) => rarity === 'legend' || rarity === 'hidden';
+
   const revealOne = (i: number) => {
-    if (dinos[i].rarity === 'legend') {
+    if (isSpecial(dinos[i].rarity)) {
       setLegendFlashing(i);
     } else {
       setRevealedSet((prev) => new Set([...prev, i]));
@@ -52,12 +56,12 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
   };
 
   const revealAll = () => {
-    // Flash legends sequentially, reveal others immediately
-    const nonLegends = dinos.map((d, i) => i).filter((i) => dinos[i].rarity !== 'legend');
-    setRevealedSet(new Set(nonLegends));
-    const firstLegend = dinos.findIndex((d) => d.rarity === 'legend');
-    if (firstLegend !== -1) {
-      setLegendFlashing(firstLegend);
+    // Flash specials sequentially, reveal others immediately
+    const nonSpecials = dinos.map((_, i) => i).filter((i) => !isSpecial(dinos[i].rarity));
+    setRevealedSet(new Set(nonSpecials));
+    const firstSpecial = dinos.findIndex((d) => isSpecial(d.rarity));
+    if (firstSpecial !== -1) {
+      setLegendFlashing(firstSpecial);
     }
   };
 
@@ -266,7 +270,7 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
                       src={`./assets/sprites/baby/${dino.species}/sprite_baby_idle_01.png`}
                       width={32}
                       height={32}
-                      style={{ imageRendering: 'pixelated' }}
+                      style={{ imageRendering: REAL_SPRITE_SPECIES.has(dino.species) ? 'auto' : 'pixelated' }}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                     <span style={{ color, fontSize: 8, fontWeight: 700 }}>

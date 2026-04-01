@@ -144,6 +144,8 @@ function DinoApp() {
         case 'sellDino': store.sellDino(args[0]); break;
         case 'renameDino': store.renameDino(args[0], args[1]); break;
         case 'mergeDinos': store.mergeDinos(args[0], args[1]); break;
+        case 'clearAllDinos': store.clearAllDinos(); break;
+        case 'generateAllSpecies': store.generateAllSpecies(); break;
         case 'pullGacha': {
           const count: number = args[0] ?? 1;
           if (count === 1) {
@@ -354,6 +356,7 @@ function DinoApp() {
 
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <DinoCanvas />
+        {activeDino && <ActionBar />}
         {renameMode && activeDino && (
           <div style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
             <input
@@ -393,6 +396,59 @@ const tabBtnBase: React.CSSProperties = {
   backdropFilter: 'blur(8px)',
   position: 'relative',
 };
+
+// ─── 감정 액션 버튼 ──────────────────────────────────────────────────────────
+const ACTIONS: { icon: string; label: string; emotion: import('@shared/types').DinoEmotion; duration: number }[] = [
+  { icon: '🍖', label: '먹이기',   emotion: 'happy',   duration: 4000 },
+  { icon: '🎮', label: '놀아주기', emotion: 'excited', duration: 5000 },
+  { icon: '🤗', label: '쓰다듬기', emotion: 'happy',   duration: 3000 },
+  { icon: '😴', label: '재우기',   emotion: 'sleepy',  duration: 5000 },
+];
+
+function ActionBar() {
+  const setActiveEmotion = useDinoStore((s) => s.setActiveEmotion);
+  const activeEmotion    = useDinoStore((s) => s.activeEmotion);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const trigger = useCallback((emotion: import('@shared/types').DinoEmotion, duration: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setActiveEmotion(emotion);
+    timerRef.current = setTimeout(() => setActiveEmotion('idle'), duration);
+  }, [setActiveEmotion]);
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  return (
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      style={{ display: 'flex', gap: 6, marginTop: 6 }}
+    >
+      {ACTIONS.map(({ icon, label, emotion, duration }) => {
+        const active = activeEmotion === emotion;
+        return (
+          <button
+            key={label}
+            title={label}
+            onClick={() => trigger(emotion, duration)}
+            style={{
+              background: active ? 'rgba(255,255,255,0.18)' : 'rgba(15,15,25,0.75)',
+              border: `1px solid ${active ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.12)'}`,
+              borderRadius: 8,
+              padding: '4px 7px',
+              fontSize: 14,
+              cursor: 'pointer',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.15s',
+              transform: active ? 'scale(1.15)' : 'scale(1)',
+            }}
+          >
+            {icon}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function TipButton({ icon, tip, onClick, style }: { icon: string; tip: string; onClick: () => void; style?: React.CSSProperties }) {
   const [hover, setHover] = useState(false);

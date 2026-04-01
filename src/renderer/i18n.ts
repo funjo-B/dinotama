@@ -54,6 +54,7 @@ export const translations = {
       pull10: '🥚×10',
       epicPity: (n: number, max: number) => `Epic 천장: ${n}/${max}`,
       legendPity: (n: number, max: number) => `Legend 천장: ${n}/${max}`,
+      hiddenPity: (n: number, max: number) => `Hidden 천장: ${n}/${max}`,
       totalPulls: (n: number) => `총 ${n}회 뽑기 완료`,
     },
 
@@ -177,6 +178,7 @@ export const translations = {
       pull10: '🥚 ×10',
       epicPity: (n: number, max: number) => `Epic Pity: ${n}/${max}`,
       legendPity: (n: number, max: number) => `Legend Pity: ${n}/${max}`,
+      hiddenPity: (n: number, max: number) => `Hidden Pity: ${n}/${max}`,
       totalPulls: (n: number) => `Total: ${n} pulls`,
     },
 
