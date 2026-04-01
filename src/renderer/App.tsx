@@ -1,141 +1,224 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { DinoCanvas } from './components/DinoCanvas';
-import { StatsOverlay } from './components/StatsOverlay';
 import { NotificationPopup } from './components/NotificationPopup';
 import { GachaResult } from './components/GachaResult';
 import { TodoPanel } from './components/TodoPanel';
-import { SideTab } from './components/SideTab';
+import { CollectionPanel } from './components/CollectionPanel';
 import { useDrag } from './hooks/useDrag';
 import { useContextMenu } from './hooks/useContextMenu';
-import { useGameLoop } from './hooks/useGameLoop';
 import { useCalendarNotifications } from './hooks/useCalendarNotifications';
 import { useAuth } from './hooks/useAuth';
 import { useDinoStore } from './stores/dinoStore';
 import { getNextStage } from './stores/growthFSM';
 import type { Dino } from '@shared/types';
+import { SPECIES_DEFS } from '@shared/constants';
+import type { MenuItem } from './hooks/useContextMenu';
 
-const TODO_PANEL_WIDTH = 240;
+// Detect if this is a panel window
+const hash = window.location.hash;
+const isPanelWindow = hash.startsWith('#panel-');
+const panelType = isPanelWindow ? hash.replace('#panel-', '') : null;
 
-const SIZE_LABELS: Record<string, string> = {
-  small: '🐣 작게',
-  medium: '🦕 보통',
-  large: '🦖 크게',
-  xlarge: '🐉 아주 크게',
-};
+// ─── Panel Window App ───
+function PanelApp() {
+  const [storeData, setStoreData] = useState<any>(null);
 
-export default function App() {
-  const [showStats, setShowStats] = useState(false);
+  // Load initial data from main window
+  useEffect(() => {
+    window.dinoAPI?.getStoreSnapshot?.().then((data: any) => {
+      if (data) {
+        setStoreData(data);
+        useDinoStore.getState().loadFromCloud(data);
+      }
+    });
+  }, []);
+
+  // Listen for store updates from main window
+  useEffect(() => {
+    // Poll for changes every 2 seconds (simple sync)
+    const interval = setInterval(async () => {
+      const data = await window.dinoAPI?.getStoreSnapshot?.();
+      if (data) {
+        useDinoStore.getState().loadFromCloud(data);
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAction = useCallback((action: string, ...args: any[]) => {
+    // Send action to main window and refresh
+    window.dinoAPI?.sendPanelAction?.(action, ...args);
+    setTimeout(async () => {
+      const data = await window.dinoAPI?.getStoreSnapshot?.();
+      if (data) useDinoStore.getState().loadFromCloud(data);
+    }, 300);
+  }, []);
+
+  if (!storeData) {
+    return <div style={{ background: 'rgb(15,15,25)', color: '#64748b', padding: 20, fontSize: 12 }}>불러오는 중...</div>;
+  }
+
+  if (panelType === 'todo') {
+    return <TodoPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} />;
+  }
+  if (panelType === 'collection') {
+    return <CollectionPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} onAction={handleAction} />;
+  }
+  return null;
+}
+
+// ─── Main Dino Window App ───
+function DinoApp() {
   const [gachaResult, setGachaResult] = useState<Dino | null>(null);
-  const [todoOpen, setTodoOpen] = useState(false);
-  const [currentSize, setCurrentSize] = useState('medium');
+  const [renameMode, setRenameMode] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-  useGameLoop();
   const { onMouseDown } = useDrag();
   const { showMenu } = useContextMenu();
-  const { activeDino, feedDino, playWithDino, pullGacha, coins, evolve } = useDinoStore();
+  const { activeDino, dinos, pullGacha, coins, evolve, setActiveDino, renameDino, sellDino } = useDinoStore();
   const { currentEvent, handleOk, handleSnooze } = useCalendarNotifications();
 
-  const toggleTodo = useCallback(() => {
-    const next = !todoOpen;
-    setTodoOpen(next);
-    if (window.dinoAPI) {
-      if (next) {
-        window.dinoAPI.expandForPanel?.(TODO_PANEL_WIDTH, 350);
-      } else {
-        window.dinoAPI.collapsePanel?.();
-      }
-    }
-  }, [todoOpen]);
+  // Expose store snapshot for panel windows
+  useEffect(() => {
+    (window as any).__dinoStoreSnapshot = () => useDinoStore.getState().getSnapshot();
+    return () => { delete (window as any).__dinoStoreSnapshot; };
+  }, []);
 
-  const handleSizeChange = useCallback((preset: string) => {
-    window.dinoAPI?.setSizePreset?.(preset);
-    setCurrentSize(preset);
+  // Listen for actions from panel windows
+  useEffect(() => {
+    const unsub = window.dinoAPI?.onPanelAction?.((action: string, ...args: any[]) => {
+      const store = useDinoStore.getState();
+      switch (action) {
+        case 'setActiveDino': store.setActiveDino(args[0]); break;
+        case 'sellDino': store.sellDino(args[0]); break;
+        case 'renameDino': store.renameDino(args[0], args[1]); break;
+      }
+    });
+    return () => { unsub?.(); };
   }, []);
 
   const handleGacha = useCallback(() => {
     const result = pullGacha(false);
-    if (result) {
-      setGachaResult(result);
-    }
+    if (result) setGachaResult(result);
   }, [pullGacha]);
+
+  const handleRename = useCallback((newName: string) => {
+    if (activeDino && newName.trim()) renameDino(activeDino.id, newName);
+    setRenameMode(false);
+  }, [activeDino, renameDino]);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       const nextStage = activeDino ? getNextStage(activeDino.stage) : null;
-      const items = [
+      const items: MenuItem[] = [
         ...(activeDino
-          ? [
-              { label: '🍖 밥 주기', action: () => feedDino(activeDino.id) },
-              { label: '🎮 놀아주기', action: () => playWithDino(activeDino.id) },
-            ]
+          ? [{ label: `✏️ 이름 변경 (${activeDino.name})`, action: () => { setRenameMode(true); setTimeout(() => renameInputRef.current?.focus(), 100); } }]
           : []),
         ...(activeDino && nextStage
           ? [{ label: `⚡ 진화! (${activeDino.stage}→${nextStage})`, action: () => evolve(activeDino.id, nextStage) }]
           : []),
+        { type: 'separator' as const, label: '' },
         { label: `🥚 알 뽑기 (💰${coins})`, action: handleGacha },
-        { label: '📋 TODO 열기', action: toggleTodo },
-        { label: '📊 상태 보기', action: () => setShowStats((s) => !s) },
-        ...Object.entries(SIZE_LABELS)
-          .filter(([key]) => key !== currentSize)
-          .map(([key, label]) => ({ label, action: () => handleSizeChange(key) })),
+        ...(dinos.length > 1
+          ? [{
+              label: '🦕 공룡 선택',
+              submenu: [
+                ...dinos.slice(0, 5).map((d) => {
+                  const sName = SPECIES_DEFS[d.species]?.nameKo ?? d.species;
+                  const stageLabel = { egg: '🥚알', baby: '🐣아기', teen: '🦕청소년', adult: '🦖성체' }[d.stage];
+                  const check = d.id === activeDino?.id ? ' ✓' : '';
+                  return { label: `${d.name} (${sName}/${stageLabel})${check}`, action: () => setActiveDino(d.id) };
+                }),
+                ...(dinos.length > 5
+                  ? [{ type: 'separator' as const, label: '' }, { label: `📦 전체 보기 (${dinos.length}마리)`, action: () => window.dinoAPI?.openPanel?.('collection') }]
+                  : []),
+              ],
+            }]
+          : []),
+        { type: 'separator' as const, label: '' },
+        { label: '📦 컬렉션', action: () => window.dinoAPI?.openPanel?.('collection') },
+        { label: '📋 TODO', action: () => window.dinoAPI?.openPanel?.('todo') },
+        { type: 'separator' as const, label: '' },
+        {
+          label: '📍 위치',
+          submenu: [
+            { label: '🔄 위치 초기화', action: () => window.dinoAPI?.resetPosition?.() },
+            { label: '💾 현재 위치 기억', action: () => window.dinoAPI?.savePosition?.() },
+            { label: '📍 기억한 위치로 이동', action: () => window.dinoAPI?.restorePosition?.() },
+          ],
+        },
+        { type: 'separator' as const, label: '' },
         user
-          ? { label: '🔓 로그아웃', action: () => { window.dinoAPI?.authLogout(); } }
-          : { label: '🔐 Google 로그인', action: () => { window.dinoAPI?.authLogin(); } },
+          ? { label: '🔓 로그아웃', action: () => window.dinoAPI?.authLogout() }
+          : { label: '🔐 Google 로그인', action: () => window.dinoAPI?.authLogin() },
       ];
       showMenu(e, items);
     },
-    [activeDino, feedDino, playWithDino, handleGacha, showMenu, coins, toggleTodo, currentSize, handleSizeChange, user]
+    [activeDino, dinos, handleGacha, showMenu, coins, user, setActiveDino, renameDino, evolve]
   );
 
   return (
     <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: todoOpen ? 'flex-end' : 'center',
-        position: 'relative',
-      }}
+      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
       onMouseDown={onMouseDown}
       onContextMenu={handleContextMenu}
-      onMouseEnter={() => setShowStats(true)}
-      onMouseLeave={() => { setShowStats(false); }}
     >
-      <NotificationPopup
-        event={currentEvent}
-        onOk={handleOk}
-        onSnooze={handleSnooze}
-      />
-
-      {/* Dino area */}
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Login indicator */}
-        {user && (
-          <div style={{
-            position: 'absolute',
-            top: -2,
-            right: -2,
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: '#4ade80',
-            border: '2px solid rgba(0,0,0,0.3)',
-            zIndex: 10,
-            title: user.displayName ?? 'Google 로그인됨',
-          }} />
-        )}
-        <DinoCanvas />
-        <StatsOverlay visible={showStats} />
-        <GachaResult dino={gachaResult} onClose={() => setGachaResult(null)} />
+      {/* Tab buttons — left side */}
+      <div style={{
+        position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
+        display: 'flex', flexDirection: 'column', gap: 4, zIndex: 100,
+      }}>
+        <button onClick={() => window.dinoAPI?.openPanel?.('todo')} style={tabBtnStyle} title="TODO">📋</button>
+        <button onClick={() => window.dinoAPI?.openPanel?.('collection')} style={tabBtnStyle} title="컬렉션">📦</button>
       </div>
 
-      {/* Side tab button */}
-      <SideTab isOpen={todoOpen} onClick={toggleTodo} />
+      <NotificationPopup event={currentEvent} onOk={handleOk} onSnooze={handleSnooze} />
 
-      {/* TODO Panel */}
-      <TodoPanel isOpen={todoOpen} onClose={toggleTodo} />
-
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {user && (
+          <div style={{
+            position: 'absolute', top: -2, right: -2,
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#4ade80', border: '2px solid rgba(0,0,0,0.3)', zIndex: 10,
+          }} title={user.displayName ?? 'Google 로그인됨'} />
+        )}
+        <DinoCanvas />
+        {renameMode && activeDino && (
+          <div style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
+            <input
+              ref={renameInputRef}
+              defaultValue={activeDino.name}
+              maxLength={20}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRename((e.target as HTMLInputElement).value);
+                if (e.key === 'Escape') setRenameMode(false);
+              }}
+              onBlur={(e) => handleRename(e.target.value)}
+              style={{
+                width: 120, fontSize: 11, padding: '2px 6px', borderRadius: 4,
+                border: '1px solid #4ade80', background: 'rgba(0,0,0,0.85)',
+                color: '#fff', outline: 'none', textAlign: 'center',
+              }}
+            />
+          </div>
+        )}
+        <GachaResult dino={gachaResult} onClose={() => setGachaResult(null)} />
+      </div>
     </div>
   );
 }
+
+export default function App() {
+  return isPanelWindow ? <PanelApp /> : <DinoApp />;
+}
+
+const tabBtnStyle: React.CSSProperties = {
+  background: 'rgba(15,15,25,0.85)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: 8,
+  padding: '6px 7px',
+  cursor: 'pointer',
+  fontSize: 13,
+  color: '#fff',
+  backdropFilter: 'blur(8px)',
+};

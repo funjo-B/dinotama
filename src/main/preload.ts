@@ -15,11 +15,24 @@ const dinoAPI = {
   resetSize: () => ipcRenderer.invoke('dino:reset-size'),
   setIgnoreMouse: (ignore: boolean, options?: { forward: boolean }) =>
     ipcRenderer.invoke('dino:set-ignore-mouse', ignore, options),
-  setSizePreset: (preset: string) => ipcRenderer.invoke('dino:set-size-preset', preset),
-  getSize: () => ipcRenderer.invoke('dino:get-size') as Promise<{ width: number; height: number } | null>,
-  expandForPanel: (panelWidth: number, minHeight: number) =>
-    ipcRenderer.invoke('dino:expand-for-panel', panelWidth, minHeight),
-  collapsePanel: () => ipcRenderer.invoke('dino:collapse-panel'),
+  openPanel: (panel: string) => ipcRenderer.invoke('dino:open-panel', panel),
+  closePanel: () => ipcRenderer.invoke('dino:close-panel'),
+  getStoreSnapshot: () => ipcRenderer.invoke('dino:get-store-snapshot'),
+  sendPanelAction: (action: string, ...args: any[]) => ipcRenderer.send('dino:panel-action', action, ...args),
+  onPanelAction: (callback: (action: string, ...args: any[]) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, action: string, ...args: any[]) => callback(action, ...args);
+    ipcRenderer.on('dino:panel-action', handler);
+    return () => ipcRenderer.removeListener('dino:panel-action', handler);
+  },
+  onPanelClosed: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('dino:panel-closed', handler);
+    return () => ipcRenderer.removeListener('dino:panel-closed', handler);
+  },
+  resetPosition: () => ipcRenderer.invoke('dino:reset-position'),
+  savePosition: () => ipcRenderer.invoke('dino:save-position'),
+  restorePosition: () => ipcRenderer.invoke('dino:restore-position') as Promise<boolean>,
+  hasSavedPosition: () => ipcRenderer.invoke('dino:has-saved-position') as Promise<boolean>,
   showContextMenu: (items: { label: string; id: string }[]) =>
     ipcRenderer.invoke('dino:show-context-menu', items) as Promise<string | null>,
 

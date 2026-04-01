@@ -2,17 +2,12 @@ import { BrowserWindow, screen, ipcMain, Menu } from 'electron';
 import path from 'path';
 
 let mainWindow: BrowserWindow | null = null;
+let panelWindow: BrowserWindow | null = null;
 
-const DINO_WIDTH = 200;
-const DINO_HEIGHT = 200;
-
-const SIZE_PRESETS: Record<string, [number, number]> = {
-  small: [150, 150],
-  medium: [200, 200],
-  large: [280, 280],
-  xlarge: [360, 360],
-};
+const DINO_WIDTH = 320;
+const DINO_HEIGHT = 280;
 const EDGE_MARGIN = 10;
+const PANEL_GAP = 4;
 
 export function getMainWindow() {
   return mainWindow;
@@ -33,7 +28,7 @@ export function createMainWindow(isDev: boolean): BrowserWindow {
     skipTaskbar: true,
     hasShadow: false,
     focusable: true,
-    type: 'toolbar', // Helps with always-on-top on some WMs
+    type: 'toolbar',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -66,16 +61,13 @@ export function createMainWindow(isDev: boolean): BrowserWindow {
     mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'));
   }
 
-  // Open DevTools in dev mode to debug white screen
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
-  // Keep always on top at the screen level
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
-  // Prevent closing — hide instead
   mainWindow.on('close', (e) => {
     if (!mainWindow?.isDestroyed()) {
       e.preventDefault();
@@ -83,13 +75,26 @@ export function createMainWindow(isDev: boolean): BrowserWindow {
     }
   });
 
-  registerWindowIPC();
+  // Close panel when main window moves
+  mainWindow.on('move', () => {
+    if (panelWindow && !panelWindow.isDestroyed()) {
+      repositionPanel();
+    }
+  });
+
+  registerWindowIPC(isDev);
 
   return mainWindow;
 }
 
-function registerWindowIPC() {
-  // Drag movement
+function repositionPanel() {
+  if (!mainWindow || !panelWindow || panelWindow.isDestroyed()) return;
+  const [dinoX, dinoY] = mainWindow.getPosition();
+  const [pw] = panelWindow.getSize();
+  panelWindow.setPosition(dinoX - pw - PANEL_GAP, dinoY);
+}
+
+function registerWindowIPC(isDev: boolean) {
   let dragOffset = { x: 0, y: 0 };
 
   ipcMain.on('dino:drag-start', (_event, mouseX: number, mouseY: number) => {
@@ -100,108 +105,144 @@ function registerWindowIPC() {
 
   ipcMain.on('dino:drag-move', (_event, mouseX: number, mouseY: number) => {
     if (!mainWindow) return;
-    const newX = mouseX - dragOffset.x;
-    const newY = mouseY - dragOffset.y;
-    mainWindow.setPosition(Math.round(newX), Math.round(newY));
+    mainWindow.setPosition(Math.round(mouseX - dragOffset.x), Math.round(mouseY - dragOffset.y));
   });
 
-  // Snap to edge
-  ipcMain.handle('dino:snap-to-edge', (_event, edge: 'left' | 'right' | 'top' | 'bottom') => {
+  ipcMain.handle('dino:get-bounds', () => mainWindow?.getBounds());
+  ipcMain.handle('dino:resize', (_event, w: number, h: number) => mainWindow?.setSize(Math.round(w), Math.round(h)));
+  ipcMain.handle('dino:reset-size', () => mainWindow?.setSize(DINO_WIDTH, DINO_HEIGHT));
+
+  // ─── Open/close panel as separate window next to dino ───
+
+  ipcMain.handle('dino:open-panel', (_event, panel: string) => {
     if (!mainWindow) return;
-    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-    const [w, h] = mainWindow.getSize();
 
-    const positions: Record<string, [number, number]> = {
-      left: [EDGE_MARGIN, sh - h - EDGE_MARGIN],
-      right: [sw - w - EDGE_MARGIN, sh - h - EDGE_MARGIN],
-      top: [sw - w - EDGE_MARGIN, EDGE_MARGIN],
-      bottom: [sw - w - EDGE_MARGIN, sh - h - EDGE_MARGIN],
-    };
+    // Toggle: if same panel is open, close it
+    if (panelWindow && !panelWindow.isDestroyed()) {
+      const currentHash = panelWindow.webContents.getURL();
+      if (currentHash.includes(`#panel-${panel}`)) {
+        panelWindow.close();
+        panelWindow = null;
+        return;
+      }
+      // Different panel requested — close old, open new
+      panelWindow.close();
+      panelWindow = null;
+    }
 
-    const [x, y] = positions[edge];
-    mainWindow.setPosition(Math.round(x), Math.round(y));
-  });
+    const [dinoX, dinoY] = mainWindow.getPosition();
+    const panelWidth = panel === 'collection' ? 300 : 260;
+    const panelHeight = 400;
 
-  // Get window bounds
-  ipcMain.handle('dino:get-bounds', () => {
-    return mainWindow?.getBounds();
-  });
+    panelWindow = new BrowserWindow({
+      width: panelWidth,
+      height: panelHeight,
+      x: dinoX - panelWidth - PANEL_GAP,
+      y: dinoY,
+      frame: false,
+      resizable: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      hasShadow: true,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false,
+      },
+    });
 
-  // Resize window (for menus/popups)
-  ipcMain.handle('dino:resize', (_event, width: number, height: number) => {
-    mainWindow?.setSize(Math.round(width), Math.round(height));
-  });
+    panelWindow.setAlwaysOnTop(true, 'screen-saver');
 
-  // Reset to dino size
-  ipcMain.handle('dino:reset-size', () => {
-    mainWindow?.setSize(DINO_WIDTH, DINO_HEIGHT);
-  });
+    if (isDev) {
+      const port = process.env.VITE_DEV_PORT || '5173';
+      panelWindow.loadURL(`http://localhost:${port}#panel-${panel}`);
+    } else {
+      panelWindow.loadFile(path.join(__dirname, '../../renderer/index.html'), {
+        hash: `panel-${panel}`,
+      });
+    }
 
-  // Set size preset
-  ipcMain.handle('dino:set-size-preset', (_event, preset: string) => {
-    const size = SIZE_PRESETS[preset];
-    if (!size || !mainWindow) return;
-    mainWindow.setSize(size[0], size[1]);
-  });
-
-  // Get current size
-  ipcMain.handle('dino:get-size', () => {
-    if (!mainWindow) return null;
-    const [w, h] = mainWindow.getSize();
-    return { width: w, height: h };
-  });
-
-  // Expand window for TODO panel (anchored to current position)
-  let savedBounds: { x: number; y: number; w: number; h: number } | null = null;
-
-  ipcMain.handle('dino:expand-for-panel', (_event, panelWidth: number, minHeight: number) => {
-    if (!mainWindow) return;
-    const [w, h] = mainWindow.getSize();
-    const [x, y] = mainWindow.getPosition();
-    savedBounds = { x, y, w, h };
-    const newW = w + panelWidth;
-    const newH = Math.max(h, minHeight);
-    // Expand to the left so the dino stays in place
-    mainWindow.setBounds({
-      x: x - panelWidth,
-      y,
-      width: newW,
-      height: newH,
+    panelWindow.on('closed', () => {
+      panelWindow = null;
+      // Notify main window
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('dino:panel-closed');
+      }
     });
   });
 
-  ipcMain.handle('dino:collapse-panel', () => {
-    if (!mainWindow) return;
-    if (savedBounds) {
-      mainWindow.setBounds({
-        x: savedBounds.x,
-        y: savedBounds.y,
-        width: savedBounds.w,
-        height: savedBounds.h,
-      });
-      savedBounds = null;
+  ipcMain.handle('dino:close-panel', () => {
+    if (panelWindow && !panelWindow.isDestroyed()) {
+      panelWindow.close();
+      panelWindow = null;
     }
   });
 
+  // ─── Sync dino data from main window to panel ───
+
+  ipcMain.handle('dino:get-store-snapshot', () => {
+    // Request snapshot from main window
+    if (!mainWindow || mainWindow.isDestroyed()) return null;
+    return mainWindow.webContents.executeJavaScript(
+      `JSON.parse(JSON.stringify(window.__dinoStoreSnapshot?.() ?? null))`
+    );
+  });
+
+  // Panel sends actions back to main window
+  ipcMain.on('dino:panel-action', (_event, action: string, ...args: any[]) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.webContents.send('dino:panel-action', action, ...args);
+  });
+
+  // Reset position
+  ipcMain.handle('dino:reset-position', () => {
+    if (!mainWindow) return;
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    mainWindow.setPosition(sw - DINO_WIDTH - EDGE_MARGIN, sh - DINO_HEIGHT - EDGE_MARGIN);
+  });
+
+  // Save / restore position
+  let savedPosition: { x: number; y: number } | null = null;
+
+  ipcMain.handle('dino:save-position', () => {
+    if (!mainWindow) return;
+    const [x, y] = mainWindow.getPosition();
+    savedPosition = { x, y };
+    return true;
+  });
+
+  ipcMain.handle('dino:restore-position', () => {
+    if (!mainWindow || !savedPosition) return false;
+    mainWindow.setPosition(savedPosition.x, savedPosition.y);
+    return true;
+  });
+
+  ipcMain.handle('dino:has-saved-position', () => !!savedPosition);
+
   // Native context menu
-  ipcMain.handle('dino:show-context-menu', (_event, items: { label: string; id: string }[]) => {
+  interface NativeMenuItem {
+    label: string;
+    id: string;
+    type?: 'normal' | 'separator';
+    submenu?: NativeMenuItem[];
+  }
+
+  ipcMain.handle('dino:show-context-menu', (_event, items: NativeMenuItem[]) => {
     if (!mainWindow) return null;
-
     return new Promise<string | null>((resolve) => {
-      const template = items.map((item) => ({
-        label: item.label,
-        click: () => resolve(item.id),
-      }));
-
-      const menu = Menu.buildFromTemplate(template);
-      menu.popup({
-        window: mainWindow!,
-        callback: () => resolve(null),
-      });
+      function buildTemplate(menuItems: NativeMenuItem[]): Electron.MenuItemConstructorOptions[] {
+        return menuItems.map((item) => {
+          if (item.type === 'separator') return { type: 'separator' as const };
+          if (item.submenu) return { label: item.label, submenu: buildTemplate(item.submenu) };
+          return { label: item.label, click: () => resolve(item.id) };
+        });
+      }
+      const menu = Menu.buildFromTemplate(buildTemplate(items));
+      menu.popup({ window: mainWindow!, callback: () => resolve(null) });
     });
   });
 
-  // Toggle click-through (for transparent areas)
   ipcMain.handle('dino:set-ignore-mouse', (_event, ignore: boolean, options?: { forward: boolean }) => {
     mainWindow?.setIgnoreMouseEvents(ignore, options);
   });

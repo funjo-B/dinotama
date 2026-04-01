@@ -6,6 +6,35 @@ interface TodoItem {
   text: string;
   done: boolean;
   createdAt: number;
+  lastCheckedDate?: string; // YYYY-MM-DD when last checked
+}
+
+const STORAGE_KEY = 'dinotama-todos';
+
+function getTodayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadTodos(): TodoItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const items: TodoItem[] = JSON.parse(raw);
+    const today = getTodayStr();
+    // Reset done status if checked on a previous day
+    return items.map((t) => {
+      if (t.done && t.lastCheckedDate && t.lastCheckedDate !== today) {
+        return { ...t, done: false, lastCheckedDate: undefined };
+      }
+      return t;
+    });
+  } catch {
+    return [];
+  }
+}
+
+function saveTodos(todos: TodoItem[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
 }
 
 interface CalendarItem {
@@ -37,10 +66,19 @@ function isPast(end: string): boolean {
 }
 
 export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
-  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [todos, setTodosRaw] = useState<TodoItem[]>(loadTodos);
   const [input, setInput] = useState('');
   const [calendarEvents, setCalendarEvents] = useState<CalendarItem[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+
+  // Wrapper that persists to localStorage
+  const setTodos = useCallback((updater: TodoItem[] | ((prev: TodoItem[]) => TodoItem[])) => {
+    setTodosRaw((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      saveTodos(next);
+      return next;
+    });
+  }, []);
 
   // Fetch calendar events when panel opens
   useEffect(() => {
@@ -62,17 +100,21 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
       { id: crypto.randomUUID(), text, done: false, createdAt: Date.now() },
     ]);
     setInput('');
-  }, [input]);
+  }, [input, setTodos]);
 
   const toggleTodo = useCallback((id: string) => {
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const newDone = !t.done;
+        return { ...t, done: newDone, lastCheckedDate: newDone ? getTodayStr() : undefined };
+      })
     );
-  }, []);
+  }, [setTodos]);
 
   const deleteTodo = useCallback((id: string) => {
     setTodos((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [setTodos]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -83,31 +125,20 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
 
   const doneCount = todos.filter((t) => t.done).length;
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ x: -240, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -240, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        <div
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: 240,
+            width: '100%',
             height: '100%',
-            background: 'rgba(15, 15, 25, 0.95)',
-            borderRight: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgb(15, 15, 25)',
             display: 'flex',
             flexDirection: 'column',
             color: '#e2e8f0',
             fontSize: 12,
-            backdropFilter: 'blur(16px)',
-            zIndex: 10000,
-            WebkitAppRegion: 'no-drag',
+            overflow: 'hidden',
           }}
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div style={{
@@ -318,8 +349,6 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
               </motion.div>
             ))}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
   );
 }

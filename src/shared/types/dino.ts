@@ -4,6 +4,19 @@ export type DinoEmotion = 'idle' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'exci
 
 export type DinoRarity = 'common' | 'rare' | 'epic' | 'legend';
 
+export type DinoSpeciesId =
+  | 'raptor' | 'trex' | 'pterodactyl' | 'triceratops'
+  | 'stegosaurus' | 'brachiosaurus' | 'ankylosaurus'
+  | 'parasaurolophus' | 'spinosaurus' | 'dilophosaurus';
+
+export interface DinoSpeciesDef {
+  id: DinoSpeciesId;
+  nameKo: string;
+  nameEn: string;
+  rarity: DinoRarity;
+  baseColor: string;
+}
+
 export interface DinoStats {
   hunger: number;    // 0-100
   happiness: number; // 0-100
@@ -13,14 +26,10 @@ export interface DinoStats {
 export interface Dino {
   id: string;
   name: string;
-  species: string;
+  species: DinoSpeciesId;
   rarity: DinoRarity;
   stage: DinoStage;
-  emotion: DinoEmotion;
-  stats: DinoStats;
   birthTime: number;
-  lastFedTime: number;
-  lastPlayTime: number;
   stageProgress: number; // 0-100, progress to next stage
 }
 
@@ -45,5 +54,6 @@ export interface UserData {
   dinos: Dino[];
   activeDinoId: string | null;
   gacha: GachaState;
+  totalSold: number;
   lastSyncTime: number;
 }

@@ -1,4 +1,4 @@
-import type { DinoStage, Dino } from '@shared/types';
+import type { DinoStage, DinoStats, Dino } from '@shared/types';
 import { STAGE_THRESHOLDS } from '@shared/constants';
 
 const STAGE_ORDER: DinoStage[] = ['egg', 'baby', 'teen', 'adult'];
@@ -11,9 +11,8 @@ export function getNextStage(current: DinoStage): DinoStage | null {
 }
 
 /** Calculate accumulated growth points based on care actions */
-export function calculateGrowthPoints(dino: Dino): number {
-  const avgStats = (dino.stats.hunger + dino.stats.happiness + (100 - dino.stats.fatigue)) / 3;
-  // Higher avg stats = faster growth
+export function calculateGrowthPoints(dino: Dino, stats: DinoStats): number {
+  const avgStats = (stats.hunger + stats.happiness + (100 - stats.fatigue)) / 3;
   const multiplier = avgStats / 100;
   return dino.stageProgress + multiplier;
 }

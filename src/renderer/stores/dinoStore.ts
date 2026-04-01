@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Dino, DinoEmotion, DinoRarity, DinoStage, GachaState, DinoStats } from '@shared/types';
-import { GACHA_RATES, PITY_THRESHOLDS } from '@shared/constants';
+import type { Dino, DinoEmotion, DinoRarity, DinoSpeciesId, DinoStage, DinoStats, GachaState } from '@shared/types';
+import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES } from '@shared/constants';
 
 // Debounced cloud sync — saves after important actions
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -22,41 +22,45 @@ function scheduleSync() {
     } catch (err) {
       console.warn('[Sync] Auto-save failed:', err);
     }
-  }, 2000); // 2초 디바운스
+  }, 2000);
 }
 
+const DEFAULT_STATS: DinoStats = { hunger: 80, happiness: 80, fatigue: 0 };
+
 interface DinoStore {
-  // State
+  // Persisted state (saved to cloud)
   dinos: Dino[];
   activeDinoId: string | null;
-  activeDino: Dino | null;
   coins: number;
   premiumCurrency: number;
   gacha: GachaState;
+  totalSold: number;
+
+  // Local-only state (not saved)
+  activeDino: Dino | null;
+  activeStats: DinoStats;
+  activeEmotion: DinoEmotion;
 
   // Actions
   setActiveDino: (id: string) => void;
-  updateStats: (id: string, stats: Partial<DinoStats>) => void;
-  updateEmotion: (id: string, emotion: DinoEmotion) => void;
+  updateActiveStats: (stats: Partial<DinoStats>) => void;
+  setActiveEmotion: (emotion: DinoEmotion) => void;
   evolve: (id: string, newStage: DinoStage) => void;
   pullGacha: (isPremium: boolean) => Dino | null;
   updateStageProgress: (id: string, progress: number) => void;
-  feedDino: (id: string) => void;
-  playWithDino: (id: string) => void;
-  loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState }) => void;
-  getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState };
+  renameDino: (id: string, newName: string) => void;
+  sellDino: (id: string) => void;
+  loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
+  getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold: number };
   resetState: () => void;
 }
 
 function rollRarity(gacha: GachaState): DinoRarity {
-  // Pity system check
   if (gacha.pullsSinceLegend >= PITY_THRESHOLDS.legend) return 'legend';
   if (gacha.pullsSinceEpic >= PITY_THRESHOLDS.epic) return 'epic';
 
-  // Normal roll
   const roll = Math.random();
   let cumulative = 0;
-
   const rarities: DinoRarity[] = ['legend', 'epic', 'rare', 'common'];
   for (const rarity of rarities) {
     cumulative += GACHA_RATES[rarity];
@@ -65,18 +69,42 @@ function rollRarity(gacha: GachaState): DinoRarity {
   return 'common';
 }
 
+function rollSpecies(rarity: DinoRarity): DinoSpeciesId {
+  const pool = SPECIES_POOL[rarity];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function migrateDino(dino: any): Dino {
+  // Migrate old species format
+  let species = dino.species;
+  if (typeof species === 'string' && species.startsWith('species_')) {
+    const rarityStr = species.replace('species_', '') as DinoRarity;
+    const pool = SPECIES_POOL[rarityStr] ?? SPECIES_POOL.common;
+    const hash = dino.id.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+    species = pool[hash % pool.length];
+  }
+
+  // Strip old fields (stats, emotion, lastFedTime, lastPlayTime)
+  return {
+    id: dino.id,
+    name: dino.name,
+    species,
+    rarity: dino.rarity,
+    stage: dino.stage ?? 'egg',
+    birthTime: dino.birthTime ?? Date.now(),
+    stageProgress: dino.stageProgress ?? 0,
+  };
+}
+
 function createDino(rarity: DinoRarity): Dino {
+  const species = rollSpecies(rarity);
   return {
     id: crypto.randomUUID(),
     name: `Dino-${Date.now().toString(36)}`,
-    species: `species_${rarity}`,
+    species,
     rarity,
     stage: 'egg',
-    emotion: 'idle',
-    stats: { hunger: 80, happiness: 80, fatigue: 0 },
     birthTime: Date.now(),
-    lastFedTime: Date.now(),
-    lastPlayTime: Date.now(),
     stageProgress: 0,
   };
 }
@@ -88,44 +116,43 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   coins: 100,
   premiumCurrency: 0,
   gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+  totalSold: 0,
+
+  // Local-only
+  activeStats: { ...DEFAULT_STATS },
+  activeEmotion: 'idle',
 
   setActiveDino: (id) => {
     const dino = get().dinos.find((d) => d.id === id) ?? null;
-    set({ activeDinoId: id, activeDino: dino });
+    set({
+      activeDinoId: id,
+      activeDino: dino,
+      activeStats: { ...DEFAULT_STATS },
+      activeEmotion: 'idle',
+    });
   },
 
-  updateStats: (id, stats) => {
+  updateActiveStats: (stats) => {
     set((state) => ({
-      dinos: state.dinos.map((d) =>
-        d.id === id ? { ...d, stats: { ...d.stats, ...stats } } : d
-      ),
-      activeDino:
-        state.activeDinoId === id && state.activeDino
-          ? { ...state.activeDino, stats: { ...state.activeDino.stats, ...stats } }
-          : state.activeDino,
+      activeStats: { ...state.activeStats, ...stats },
     }));
   },
 
-  updateEmotion: (id, emotion) => {
-    set((state) => ({
-      dinos: state.dinos.map((d) => (d.id === id ? { ...d, emotion } : d)),
-      activeDino:
-        state.activeDinoId === id && state.activeDino
-          ? { ...state.activeDino, emotion }
-          : state.activeDino,
-    }));
+  setActiveEmotion: (emotion) => {
+    set({ activeEmotion: emotion });
   },
 
   evolve: (id, newStage) => {
-    set((state) => ({
-      dinos: state.dinos.map((d) =>
+    set((state) => {
+      const newDinos = state.dinos.map((d) =>
         d.id === id ? { ...d, stage: newStage, stageProgress: 0 } : d
-      ),
-      activeDino:
-        state.activeDinoId === id && state.activeDino
-          ? { ...state.activeDino, stage: newStage, stageProgress: 0 }
-          : state.activeDino,
-    }));
+      );
+      const updated = newDinos.find((d) => d.id === id) ?? null;
+      return {
+        dinos: newDinos,
+        activeDino: state.activeDinoId === id ? updated : state.activeDino,
+      };
+    });
     scheduleSync();
   },
 
@@ -148,9 +175,10 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     set({
       dinos: [...state.dinos, newDino],
       gacha: newGacha,
-      // Always activate the newly pulled dino
       activeDinoId: newDino.id,
       activeDino: newDino,
+      activeStats: { ...DEFAULT_STATS },
+      activeEmotion: 'idle',
       ...(isPremium
         ? { premiumCurrency: state.premiumCurrency - cost }
         : { coins: state.coins - cost }),
@@ -161,52 +189,77 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   },
 
   updateStageProgress: (id, progress) => {
-    set((state) => ({
-      dinos: state.dinos.map((d) =>
+    set((state) => {
+      const newDinos = state.dinos.map((d) =>
         d.id === id ? { ...d, stageProgress: progress } : d
-      ),
-      activeDino:
-        state.activeDinoId === id && state.activeDino
-          ? { ...state.activeDino, stageProgress: progress }
-          : state.activeDino,
-    }));
+      );
+      const updated = newDinos.find((d) => d.id === id) ?? null;
+      return {
+        dinos: newDinos,
+        activeDino: state.activeDinoId === id ? updated : state.activeDino,
+      };
+    });
   },
 
-  feedDino: (id) => {
-    const dino = get().dinos.find((d) => d.id === id);
-    if (!dino) return;
-
-    const newHunger = Math.min(100, dino.stats.hunger + 20);
-    const newHappiness = Math.min(100, dino.stats.happiness + 5);
-    get().updateStats(id, { hunger: newHunger, happiness: newHappiness });
-    get().updateEmotion(id, 'happy');
+  renameDino: (id, newName) => {
+    const trimmed = newName.trim().slice(0, 20);
+    if (!trimmed) return;
+    set((state) => {
+      const newDinos = state.dinos.map((d) => (d.id === id ? { ...d, name: trimmed } : d));
+      const updated = newDinos.find((d) => d.id === id) ?? null;
+      return {
+        dinos: newDinos,
+        activeDino: state.activeDinoId === id ? updated : state.activeDino,
+      };
+    });
     scheduleSync();
   },
 
-  playWithDino: (id) => {
-    const dino = get().dinos.find((d) => d.id === id);
+  sellDino: (id) => {
+    const state = get();
+    const dino = state.dinos.find((d) => d.id === id);
     if (!dino) return;
+    if (state.dinos.length <= 1) return; // can't sell last dino
 
-    const newHappiness = Math.min(100, dino.stats.happiness + 15);
-    const newFatigue = Math.min(100, dino.stats.fatigue + 10);
-    get().updateStats(id, { happiness: newHappiness, fatigue: newFatigue });
-    get().updateEmotion(id, 'excited');
+    const price = SELL_PRICES[dino.rarity];
+    const newDinos = state.dinos.filter((d) => d.id !== id);
+
+    // If selling active dino, switch to first remaining
+    let newActiveDino = state.activeDino;
+    let newActiveDinoId = state.activeDinoId;
+    if (state.activeDinoId === id) {
+      newActiveDino = newDinos[0] ?? null;
+      newActiveDinoId = newActiveDino?.id ?? null;
+    }
+
+    set({
+      dinos: newDinos,
+      coins: state.coins + price,
+      activeDinoId: newActiveDinoId,
+      activeDino: newActiveDino,
+      totalSold: state.totalSold + 1,
+      ...(newActiveDinoId !== state.activeDinoId ? { activeStats: { ...DEFAULT_STATS }, activeEmotion: 'idle' as DinoEmotion } : {}),
+    });
     scheduleSync();
   },
 
   loadFromCloud: (data) => {
+    const migratedDinos = data.dinos.map(migrateDino);
     const activeDino = data.activeDinoId
-      ? data.dinos.find((d) => d.id === data.activeDinoId) ?? null
-      : data.dinos[0] ?? null;
+      ? migratedDinos.find((d) => d.id === data.activeDinoId) ?? null
+      : migratedDinos[0] ?? null;
     set({
-      dinos: data.dinos,
+      dinos: migratedDinos,
       activeDinoId: activeDino?.id ?? null,
       activeDino,
       coins: data.coins,
       premiumCurrency: data.premiumCurrency,
       gacha: data.gacha,
+      totalSold: data.totalSold ?? 0,
+      activeStats: { ...DEFAULT_STATS },
+      activeEmotion: 'idle',
     });
-    console.log(`[DinoStore] Loaded from cloud: ${data.dinos.length} dinos, ${data.coins} coins`);
+    console.log(`[DinoStore] Loaded from cloud: ${migratedDinos.length} dinos, ${data.coins} coins`);
   },
 
   getSnapshot: () => {
@@ -217,6 +270,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       coins: s.coins,
       premiumCurrency: s.premiumCurrency,
       gacha: s.gacha,
+      totalSold: s.totalSold,
     };
   },
 
@@ -228,6 +282,9 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       coins: 100,
       premiumCurrency: 0,
       gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+      totalSold: 0,
+      activeStats: { ...DEFAULT_STATS },
+      activeEmotion: 'idle',
     });
   },
 }));

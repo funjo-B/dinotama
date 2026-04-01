@@ -16,27 +16,26 @@ export function useGameLoop() {
       lastTick.current = now;
 
       const state = useDinoStore.getState();
-      const { activeDino } = state;
+      const { activeDino, activeStats } = state;
       if (!activeDino) return;
 
-      // 1. Decay stats
-      const newStats = decayStats(activeDino.stats, elapsed);
-      state.updateStats(activeDino.id, newStats);
+      // 1. Decay local stats (not persisted per-dino)
+      const newStats = decayStats(activeStats, elapsed);
+      state.updateActiveStats(newStats);
 
       // 2. Resolve emotion from stats
       const emotion = resolveEmotion(newStats);
-      if (emotion !== activeDino.emotion) {
-        state.updateEmotion(activeDino.id, emotion);
+      if (emotion !== state.activeEmotion) {
+        state.setActiveEmotion(emotion);
       }
 
       // 3. Add growth points and check evolution
-      const growth = calculateGrowthPoints({ ...activeDino, stats: newStats });
+      const growth = calculateGrowthPoints(activeDino, newStats);
       const newStage = checkEvolution({ ...activeDino, stageProgress: growth });
 
       if (newStage) {
         state.evolve(activeDino.id, newStage);
       } else {
-        // Just update progress
         state.updateStageProgress(activeDino.id, growth);
       }
     }, TICK_INTERVAL_MS);

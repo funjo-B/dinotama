@@ -15,12 +15,11 @@
 - [x] 투명 BrowserWindow (always-on-top)
 - [x] 드래그 이동 + 모서리 고정
 - [x] 시스템 트레이 + 딥링크
-- [x] 우클릭 컨텍스트 메뉴 + 스탯 오버레이
+- [x] 우클릭 컨텍스트 메뉴
 
 ### Sprint 3: 게임 로직 ✅
 - [x] 성장 FSM (egg→baby→teen→adult)
-- [x] 스탯 시스템 (hunger/happiness/fatigue)
-- [x] 감정 트리거 + 가챠 확률 + 천장제
+- [x] 가챠 확률 + 천장제
 
 ### Sprint 4: UI & 애니메이션 (부분 완료)
 - [x] 스프라이트 구조 + DinoCanvas + Framer Motion
@@ -39,15 +38,35 @@
 
 ### Sprint 7: 결제 시스템 (스캐폴드만)
 - [x] Stripe 서비스 모듈 구조
-- [ ] 실제 결제 로직 미구현 (아래 참조)
+- [ ] 실제 결제 로직 미구현
 
 ### Sprint 8: Firebase 인증 & 동기화 수정 ✅
-- [x] Vite envDir 설정 — .env가 프로젝트 루트에서 로드되도록 수정
-- [x] useAuth IPC 리스너 타이밍 수정 — firebase import 전에 이벤트 리스너 등록 + 큐 처리
-- [x] useAuth 로그아웃 핸들러 개선 — auth.signOut() await 보장, firebase 모듈 참조 재사용
-- [x] OAuth 콜백 서버 포트 충돌 수정 — closeCallbackServer()로 이전 서버 완전 종료 후 재사용
-- [x] firebase.ts 디버그 로그 추가 (환경변수 로드 확인용)
-- [x] StatsOverlay 짤림 방지 (whiteSpace: nowrap)
+- [x] Vite envDir 설정
+- [x] useAuth IPC 리스너 타이밍 수정
+- [x] OAuth 콜백 서버 포트 충돌 수정
+
+### Sprint 9: 공룡 종 다양성 + 컬렉션 시스템 ✅
+- [x] 10종 공룡 종(species) 시스템 추가 (raptor, trex, pterodactyl 등)
+- [x] 레어도별 종 풀 (common 3종 / rare 3종 / epic 2종 / legend 2종)
+- [x] 가챠에서 레어도 + 종 동시 결정
+- [x] 240개 종별 placeholder 스프라이트 생성 (10종 x 4스테이지 x 6감정)
+- [x] 공룡 이름 변경 기능 (우클릭 메뉴)
+- [x] 공룡 선택(전환) 서브메뉴
+- [x] 컨텍스트 메뉴 서브메뉴 + 구분선 지원
+
+### Sprint 10: 컬렉션 패널 + UI 리팩토링 ✅
+- [x] Dino 타입 간소화 — 개별 스탯(stats/emotion) 제거, active dino만 로컬 관리
+- [x] 공룡 되팔기(sellDino) 기능 (레어도별 가격: common 5, rare 15, epic 50, legend 200)
+- [x] CollectionPanel — 종+스테이지별 그룹화, 보유수량, 우클릭 판매/이름변경/대표설정
+- [x] 패널을 별도 BrowserWindow로 분리 — 공룡 창(320x280) 크기 고정, 패널은 옆에 독립 창
+- [x] IPC 기반 스토어 동기화 — 패널 창에서 메인 창 스토어 읽기/액션 위임
+- [x] 기존 세이브 데이터 마이그레이션 (old species/stats 필드 자동 strip)
+
+### Sprint 11: UX 개선 ✅
+- [x] 위치 초기화 / 현재 위치 기억 / 기억한 위치로 이동 (우클릭 메뉴)
+- [x] TODO 로컬 저장 (localStorage) — 재시작해도 유지
+- [x] TODO 매일 체크 초기화 — 하루 지나면 done 상태만 리셋 (항목 유지)
+- [x] 공룡 드래그 시 패널 창 따라가기
 
 ---
 
@@ -55,16 +74,20 @@
 
 ### 🔴 1순위 — 핵심 기능 완성
 
+#### 이모션 시스템
+- [ ] 공룡 이모션 추가 (춤추기, 기뻐하기 등) — 스탯 기반이 아닌 이벤트 기반
+- [ ] 이모션별 스프라이트 애니메이션 교체
+- **담당**: game-agent / asset-agent
+
+#### 실제 스프라이트 에셋
+- [ ] 종별 실제 공룡 이미지 제작/교체 (현재 placeholder)
+- [ ] 72x72 PNG, 경로: `public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_01.png`
+- **담당**: asset-agent
+
 #### 로그인/동기화 안정화
 - [ ] 트레이 로그아웃→로그인 한 번에 되는지 최종 확인
-- [ ] 우클릭 컨텍스트 메뉴 로그인 동작 확인
 - [ ] Firebase Firestore 저장/불러오기 E2E 테스트
-- [ ] 앱 재시작 시 자동 세션 복원 동작 확인
-- **담당**: dev-agent / notify-agent
-
-#### TodoPanel Firebase 연동
-- [ ] TodoPanel 데이터를 Firestore에 저장/불러오기 (현재 로컬 state만)
-- **담당**: notify-agent
+- **담당**: dev-agent
 
 ### 🟠 2순위 — 결제 시스템
 
@@ -73,7 +96,6 @@
 - [ ] 고급알 상품 3종 priceId 설정
 - [ ] 백엔드 서버 구축 (Checkout Session 생성)
 - [ ] 결제 완료 webhook → 가챠 트리거 연결
-- [ ] .env에 Stripe 키 추가
 - **담당**: game-agent
 
 ### 🟡 3순위 — 품질 & 안정성
@@ -81,53 +103,38 @@
 #### ESLint / Prettier 설정
 - [ ] .eslintrc.js + .prettierrc 생성
 - [ ] npm run lint 동작 확인
-- **담당**: dev-agent
 
 #### 테스트 코드 작성
-- [ ] growthFSM 단위 테스트
-- [ ] dinoStore 단위 테스트
-- [ ] emotionEngine 단위 테스트
-- [ ] 가챠 확률 / 천장제 테스트
-- **담당**: game-agent
+- [ ] growthFSM / dinoStore / 가챠 확률 단위 테스트
 
-#### 에러 핸들링 강화
-- [ ] Firebase 동기화 실패 시 재시도 로직
+#### 에러 핸들링
+- [ ] Firebase 동기화 실패 시 재시도
 - [ ] 사용자에게 에러 UI 표시
-- **담당**: notify-agent
 
 ### 🔵 4순위 — 빌드 & 배포
 
-#### 빌드 완성
 - [ ] 앱 아이콘 제작 (icon.ico / icon.icns)
-- [ ] Windows NSIS 인스톨러 테스트
-- [ ] macOS DMG 빌드 테스트
-- **담당**: dev-agent
-
-#### 자동 업데이트 & 배포
-- [ ] electron-updater 설정
-- [ ] GitHub Releases 배포 자동화
-- [ ] Windows/macOS 코드 서명
-- **담당**: dev-agent
+- [ ] Windows NSIS / macOS DMG 빌드 테스트
+- [ ] electron-updater + GitHub Releases 자동화
+- [ ] 코드 서명
 
 ### ⚪ 5순위 — 고도화
 
-#### 애니메이션 개선
 - [ ] Rive 애니메이션 라이브러리 통합
-- [ ] 실제 스프라이트 에셋 제작/교체
-- **담당**: asset-agent
+- [ ] 공룡 수 대량일 때 컬렉션 성능 최적화
 
 ---
 
 ## 현재 상태 요약
-- **Firebase**: ✅ 연결 완료 (Authentication + Firestore + 환경변수 주입 확인)
-- **Electron**: ✅ 기본 동작 (프로덕션 빌드 경로 수정 완료)
-- **게임 로직**: ✅ FSM/스탯/가챠/감정 구현 완료
-- **Auth**: ✅ 통합 Google 로그인 (Firebase + Calendar 동시 인증, 포트 충돌 수정)
-- **Calendar**: ✅ 폴링 구현 완료 (auth 토큰 연동)
-- **Stripe**: ⚠️ 스캐폴드만 (키/백엔드 없음)
+- **공룡 시스템**: ✅ 10종 공룡, 가챠, 되팔기, 이름변경, 컬렉션 패널
+- **UI 구조**: ✅ 공룡 창(320x280 고정) + 패널(별도 BrowserWindow)
+- **Firebase**: ✅ 인증 + Firestore 동기화
+- **Calendar**: ✅ 폴링 + 알림 팝업
+- **TODO**: ✅ localStorage 저장, 매일 체크 초기화
+- **Stripe**: ⚠️ 스캐폴드만
 - **테스트/린트**: ❌ 미구현
 
 ## 환경 설정 메모
-- `.env` 파일은 git에 포함 안됨 — 새 환경에서 `.env.example` 복사 후 키값 채워야 함
+- `.env` 파일은 git에 포함 안됨 — `.env.example` 복사 후 키값 채워야 함
 - Firebase Console: https://console.firebase.google.com (프로젝트: dinotama-dff44)
-- Vite `envDir`이 프로젝트 루트를 가리키도록 설정됨 (root가 src/renderer이므로 필수)
+- Vite `envDir`이 프로젝트 루트를 가리키도록 설정됨

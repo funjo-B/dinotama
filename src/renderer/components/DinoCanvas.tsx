@@ -37,7 +37,7 @@ const EMOTION_ANIMATIONS: Record<DinoEmotion, TargetAndTransition> = {
 
 export function DinoCanvas() {
   const activeDino = useDinoStore((s) => s.activeDino);
-  const emotion: DinoEmotion = activeDino?.emotion ?? 'idle';
+  const emotion: DinoEmotion = useDinoStore((s) => s.activeEmotion);
 
   return (
     <AnimatePresence mode="wait">
@@ -55,12 +55,19 @@ export function DinoCanvas() {
       >
         {activeDino ? (
           <img
-            src={`./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${activeDino.emotion}_01.png`}
+            src={`./assets/sprites/${activeDino.stage}/${activeDino.species}/sprite_${activeDino.stage}_${emotion}_01.png`}
             alt={activeDino.name}
             width={72}
             height={72}
             style={{ imageRendering: 'pixelated' }}
             draggable={false}
+            onError={(e) => {
+              // Fallback to legacy rarity-based sprite
+              const fallback = `./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${emotion}_01.png`;
+              if ((e.target as HTMLImageElement).src !== fallback) {
+                (e.target as HTMLImageElement).src = fallback;
+              }
+            }}
           />
         ) : (
           <EggPlaceholder />

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Dino, DinoRarity } from '@shared/types';
+import { SPECIES_DEFS } from '@shared/constants';
 
 const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; bg: string }> = {
   common: { label: '★ Common', color: '#9ca3af', bg: 'rgba(156,163,175,0.2)' },
@@ -50,7 +51,7 @@ export function GachaResult({ dino, onClose }: GachaResultProps) {
           <div style={{ color: RARITY_CONFIG[dino.rarity].color, fontWeight: 700, marginBottom: 2 }}>
             {RARITY_CONFIG[dino.rarity].label}
           </div>
-          <div>🥚 새 공룡 획득!</div>
+          <div>🥚 {SPECIES_DEFS[dino.species]?.nameKo ?? '???'} 획득!</div>
         </motion.div>
       )}
     </AnimatePresence>
