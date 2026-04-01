@@ -29,6 +29,7 @@ export function StatsOverlay({ visible }: StatsOverlayProps) {
             bottom: -50,
             left: '50%',
             transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
             background: 'rgba(0,0,0,0.8)',
             borderRadius: 8,
             padding: '6px 10px',

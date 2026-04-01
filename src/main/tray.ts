@@ -1,11 +1,11 @@
 import { Tray, Menu, nativeImage, app } from 'electron';
 import path from 'path';
 import { getMainWindow } from './window';
+import { getSavedTokens } from './auth';
 
 let tray: Tray | null = null;
 
 export function createTray(): Tray | null {
-  // Create a simple 16x16 tray icon programmatically as fallback
   const iconPath = path.join(__dirname, '../../public/assets/icons/tray-icon.png');
   let icon: Electron.NativeImage;
 
@@ -13,13 +13,12 @@ export function createTray(): Tray | null {
     icon = nativeImage.createFromPath(iconPath);
     if (icon.isEmpty()) throw new Error('empty icon');
   } catch {
-    // Create a minimal green circle as fallback tray icon
     icon = nativeImage.createFromBuffer(createFallbackIcon());
     icon = icon.resize({ width: 16, height: 16 });
   }
 
   tray = new Tray(icon);
-  tray.setToolTip('DinoTama 🦕');
+  tray.setToolTip('DinoTama');
 
   const contextMenu = buildTrayMenu();
   tray.setContextMenu(contextMenu);
@@ -36,9 +35,11 @@ export function createTray(): Tray | null {
 }
 
 function buildTrayMenu(): Menu {
+  const isLoggedIn = !!getSavedTokens();
+
   return Menu.buildFromTemplate([
     {
-      label: '🦕 DinoTama 보기',
+      label: 'DinoTama 보기',
       click: () => {
         const win = getMainWindow();
         win?.show();
@@ -47,7 +48,27 @@ function buildTrayMenu(): Menu {
     },
     { type: 'separator' },
     {
-      label: '📍 위치 초기화',
+      label: isLoggedIn ? 'Google 로그인됨' : 'Google 로그인',
+      enabled: !isLoggedIn,
+      click: () => {
+        const { ipcMain } = require('electron');
+        ipcMain.emit('dino:auth-login-from-tray');
+      },
+    },
+    ...(isLoggedIn
+      ? [
+          {
+            label: '로그아웃',
+            click: () => {
+              const { ipcMain } = require('electron');
+              ipcMain.emit('dino:auth-logout-from-tray');
+            },
+          } as Electron.MenuItemConstructorOptions,
+        ]
+      : []),
+    { type: 'separator' },
+    {
+      label: '위치 초기화',
       click: () => {
         const win = getMainWindow();
         if (win) {
@@ -60,7 +81,7 @@ function buildTrayMenu(): Menu {
     },
     { type: 'separator' },
     {
-      label: '❌ 종료',
+      label: '종료',
       click: () => {
         const win = getMainWindow();
         if (win) {
@@ -73,9 +94,12 @@ function buildTrayMenu(): Menu {
   ]);
 }
 
+export function refreshTrayMenu() {
+  tray?.setContextMenu(buildTrayMenu());
+}
+
 // Creates a minimal PNG buffer for a 16x16 green circle
 function createFallbackIcon(): Buffer {
-  // Minimal 16x16 RGBA PNG
   const size = 16;
   const channels = 4;
   const pixels = Buffer.alloc(size * size * channels, 0);

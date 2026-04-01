@@ -1,10 +1,17 @@
-import { BrowserWindow, screen, ipcMain } from 'electron';
+import { BrowserWindow, screen, ipcMain, Menu } from 'electron';
 import path from 'path';
 
 let mainWindow: BrowserWindow | null = null;
 
 const DINO_WIDTH = 200;
 const DINO_HEIGHT = 200;
+
+const SIZE_PRESETS: Record<string, [number, number]> = {
+  small: [150, 150],
+  medium: [200, 200],
+  large: [280, 280],
+  xlarge: [360, 360],
+};
 const EDGE_MARGIN = 10;
 
 export function getMainWindow() {
@@ -57,6 +64,11 @@ export function createMainWindow(isDev: boolean): BrowserWindow {
     loadWithRetry();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'));
+  }
+
+  // Open DevTools in dev mode to debug white screen
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
   // Keep always on top at the screen level
@@ -123,6 +135,70 @@ function registerWindowIPC() {
   // Reset to dino size
   ipcMain.handle('dino:reset-size', () => {
     mainWindow?.setSize(DINO_WIDTH, DINO_HEIGHT);
+  });
+
+  // Set size preset
+  ipcMain.handle('dino:set-size-preset', (_event, preset: string) => {
+    const size = SIZE_PRESETS[preset];
+    if (!size || !mainWindow) return;
+    mainWindow.setSize(size[0], size[1]);
+  });
+
+  // Get current size
+  ipcMain.handle('dino:get-size', () => {
+    if (!mainWindow) return null;
+    const [w, h] = mainWindow.getSize();
+    return { width: w, height: h };
+  });
+
+  // Expand window for TODO panel (anchored to current position)
+  let savedBounds: { x: number; y: number; w: number; h: number } | null = null;
+
+  ipcMain.handle('dino:expand-for-panel', (_event, panelWidth: number, minHeight: number) => {
+    if (!mainWindow) return;
+    const [w, h] = mainWindow.getSize();
+    const [x, y] = mainWindow.getPosition();
+    savedBounds = { x, y, w, h };
+    const newW = w + panelWidth;
+    const newH = Math.max(h, minHeight);
+    // Expand to the left so the dino stays in place
+    mainWindow.setBounds({
+      x: x - panelWidth,
+      y,
+      width: newW,
+      height: newH,
+    });
+  });
+
+  ipcMain.handle('dino:collapse-panel', () => {
+    if (!mainWindow) return;
+    if (savedBounds) {
+      mainWindow.setBounds({
+        x: savedBounds.x,
+        y: savedBounds.y,
+        width: savedBounds.w,
+        height: savedBounds.h,
+      });
+      savedBounds = null;
+    }
+  });
+
+  // Native context menu
+  ipcMain.handle('dino:show-context-menu', (_event, items: { label: string; id: string }[]) => {
+    if (!mainWindow) return null;
+
+    return new Promise<string | null>((resolve) => {
+      const template = items.map((item) => ({
+        label: item.label,
+        click: () => resolve(item.id),
+      }));
+
+      const menu = Menu.buildFromTemplate(template);
+      menu.popup({
+        window: mainWindow!,
+        callback: () => resolve(null),
+      });
+    });
   });
 
   // Toggle click-through (for transparent areas)

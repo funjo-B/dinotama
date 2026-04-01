@@ -1,8 +1,12 @@
+import { config } from 'dotenv';
 import { app } from 'electron';
 import { createMainWindow, getMainWindow } from './window';
 import { createTray } from './tray';
 import { registerDeepLink, handleSecondInstance } from './deeplink';
-import { setupCalendarIPC } from './calendar';
+import { setupAuthIPC } from './auth';
+
+// Load .env for main process (Google OAuth keys, etc.)
+config();
 
 // Register deep link protocol
 registerDeepLink();
@@ -21,7 +25,7 @@ if (!gotTheLock) {
     const isDev = !app.isPackaged;
     createMainWindow(isDev);
     createTray();
-    setupCalendarIPC();
+    setupAuthIPC();
 
     if (isDev) {
       console.log('[DinoTama] Dev mode — renderer at http://localhost:5173');

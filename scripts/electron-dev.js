@@ -39,7 +39,9 @@ async function main() {
     const text = data.toString();
     process.stdout.write(text);
 
-    if (!electronProc && text.includes('Local:')) {
+    // Strip ANSI escape codes before checking
+    const plain = text.replace(/\x1b\[[0-9;]*m/g, '');
+    if (!electronProc && (plain.includes('Local:') || plain.includes('ready in'))) {
       console.log('\n[DinoTama] Vite ready! Launching Electron...\n');
 
       electronProc = spawn('npx', ['electron', '.'], {

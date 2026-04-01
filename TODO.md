@@ -41,22 +41,30 @@
 - [x] Stripe 서비스 모듈 구조
 - [ ] 실제 결제 로직 미구현 (아래 참조)
 
+### Sprint 8: Firebase 인증 & 동기화 수정 ✅
+- [x] Vite envDir 설정 — .env가 프로젝트 루트에서 로드되도록 수정
+- [x] useAuth IPC 리스너 타이밍 수정 — firebase import 전에 이벤트 리스너 등록 + 큐 처리
+- [x] useAuth 로그아웃 핸들러 개선 — auth.signOut() await 보장, firebase 모듈 참조 재사용
+- [x] OAuth 콜백 서버 포트 충돌 수정 — closeCallbackServer()로 이전 서버 완전 종료 후 재사용
+- [x] firebase.ts 디버그 로그 추가 (환경변수 로드 확인용)
+- [x] StatsOverlay 짤림 방지 (whiteSpace: nowrap)
+
 ---
 
 ## 남은 작업 (우선순위순)
 
 ### 🔴 1순위 — 핵심 기능 완성
 
-#### Google Calendar OAuth 완성
-- [ ] Google Cloud Console에서 OAuth 2.0 클라이언트 ID 생성
-- [ ] client_id, client_secret을 .env에 추가
-- [ ] calendar.ts의 OAuth2Client에 credentials 연결
+#### 로그인/동기화 안정화
+- [ ] 트레이 로그아웃→로그인 한 번에 되는지 최종 확인
+- [ ] 우클릭 컨텍스트 메뉴 로그인 동작 확인
+- [ ] Firebase Firestore 저장/불러오기 E2E 테스트
+- [ ] 앱 재시작 시 자동 세션 복원 동작 확인
 - **담당**: dev-agent / notify-agent
 
-#### 환경변수 정리
-- [ ] .env에 Google OAuth 키 추가 (VITE_GOOGLE_CLIENT_ID 등)
-- [ ] .env.example 업데이트
-- **담당**: dev-agent
+#### TodoPanel Firebase 연동
+- [ ] TodoPanel 데이터를 Firestore에 저장/불러오기 (현재 로컬 state만)
+- **담당**: notify-agent
 
 ### 🟠 2순위 — 결제 시스템
 
@@ -85,7 +93,6 @@
 #### 에러 핸들링 강화
 - [ ] Firebase 동기화 실패 시 재시도 로직
 - [ ] 사용자에게 에러 UI 표시
-- [ ] TodoPanel Firebase 연동 (현재 로컬 state만)
 - **담당**: notify-agent
 
 ### 🔵 4순위 — 빌드 & 배포
@@ -112,13 +119,15 @@
 ---
 
 ## 현재 상태 요약
-- **Firebase**: ✅ 연결 완료 (Authentication + Firestore 활성화)
+- **Firebase**: ✅ 연결 완료 (Authentication + Firestore + 환경변수 주입 확인)
 - **Electron**: ✅ 기본 동작 (프로덕션 빌드 경로 수정 완료)
 - **게임 로직**: ✅ FSM/스탯/가챠/감정 구현 완료
-- **Calendar**: ⚠️ API 코드 있으나 OAuth 미설정
+- **Auth**: ✅ 통합 Google 로그인 (Firebase + Calendar 동시 인증, 포트 충돌 수정)
+- **Calendar**: ✅ 폴링 구현 완료 (auth 토큰 연동)
 - **Stripe**: ⚠️ 스캐폴드만 (키/백엔드 없음)
 - **테스트/린트**: ❌ 미구현
 
 ## 환경 설정 메모
 - `.env` 파일은 git에 포함 안됨 — 새 환경에서 `.env.example` 복사 후 키값 채워야 함
 - Firebase Console: https://console.firebase.google.com (프로젝트: dinotama-dff44)
+- Vite `envDir`이 프로젝트 루트를 가리키도록 설정됨 (root가 src/renderer이므로 필수)

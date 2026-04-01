@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TodoItem {
@@ -8,14 +8,51 @@ interface TodoItem {
   createdAt: number;
 }
 
+interface CalendarItem {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+}
+
 interface TodoPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+function formatTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function isNow(start: string, end: string): boolean {
+  const now = Date.now();
+  return now >= new Date(start).getTime() && now < new Date(end).getTime();
+}
+
+function isPast(end: string): boolean {
+  return Date.now() >= new Date(end).getTime();
+}
+
 export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [input, setInput] = useState('');
+  const [calendarEvents, setCalendarEvents] = useState<CalendarItem[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+
+  // Fetch calendar events when panel opens
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!window.dinoAPI?.calendarToday) return;
+
+    setCalendarLoading(true);
+    window.dinoAPI.calendarToday()
+      .then((events) => setCalendarEvents(events ?? []))
+      .catch(() => setCalendarEvents([]))
+      .finally(() => setCalendarLoading(false));
+  }, [isOpen]);
 
   const addTodo = useCallback(() => {
     const text = input.trim();
@@ -50,18 +87,18 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ x: 240, opacity: 0 }}
+          initial={{ x: -240, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 240, opacity: 0 }}
+          exit={{ x: -240, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           style={{
             position: 'fixed',
             top: 0,
-            right: 0,
+            left: 0,
             width: 240,
             height: '100%',
             background: 'rgba(15, 15, 25, 0.95)',
-            borderLeft: '1px solid rgba(255,255,255,0.08)',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
             display: 'flex',
             flexDirection: 'column',
             color: '#e2e8f0',
@@ -97,6 +134,73 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
               ✕
             </button>
           </div>
+
+          {/* Calendar Section */}
+          {calendarEvents.length > 0 && (
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{
+                padding: '8px 14px 4px',
+                fontSize: 11,
+                color: '#94a3b8',
+                fontWeight: 600,
+              }}>
+                오늘 일정
+              </div>
+              <div style={{ padding: '0 8px 8px', maxHeight: 150, overflowY: 'auto' }}>
+                {calendarEvents.map((evt) => {
+                  const past = isPast(evt.endTime);
+                  const now = isNow(evt.startTime, evt.endTime);
+                  return (
+                    <div
+                      key={evt.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '5px 6px',
+                        borderRadius: 6,
+                        background: now ? 'rgba(74, 222, 128, 0.1)' : 'transparent',
+                        opacity: past ? 0.4 : 1,
+                      }}
+                    >
+                      <span style={{
+                        color: now ? '#4ade80' : '#64748b',
+                        fontSize: 10,
+                        flexShrink: 0,
+                        marginTop: 1,
+                        fontWeight: now ? 700 : 400,
+                      }}>
+                        {formatTime(evt.startTime)}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 11,
+                          color: past ? '#64748b' : '#e2e8f0',
+                          textDecoration: past ? 'line-through' : 'none',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {evt.title}
+                        </div>
+                        {evt.location && (
+                          <div style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>
+                            {evt.location}
+                          </div>
+                        )}
+                      </div>
+                      {now && <span style={{ fontSize: 8, color: '#4ade80', flexShrink: 0, marginTop: 2 }}>NOW</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {calendarLoading && (
+            <div style={{ padding: '8px 14px', fontSize: 11, color: '#64748b' }}>
+              일정 불러오는 중...
+            </div>
+          )}
 
           {/* Input */}
           <div style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -137,7 +241,7 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
 
           {/* Todo List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
-            {todos.length === 0 && (
+            {todos.length === 0 && calendarEvents.length === 0 && !calendarLoading && (
               <div style={{
                 padding: 20,
                 textAlign: 'center',

@@ -2,6 +2,29 @@ import { create } from 'zustand';
 import type { Dino, DinoEmotion, DinoRarity, DinoStage, GachaState, DinoStats } from '@shared/types';
 import { GACHA_RATES, PITY_THRESHOLDS } from '@shared/constants';
 
+// Debounced cloud sync — saves after important actions
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+function scheduleSync() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      const { syncNow, getCurrentUser } = await import('../services/firebase');
+      const user = getCurrentUser();
+      if (!user) return;
+      const snap = useDinoStore.getState().getSnapshot();
+      await syncNow({
+        uid: user.uid,
+        displayName: user.displayName ?? '',
+        email: user.email ?? '',
+        ...snap,
+        lastSyncTime: Date.now(),
+      });
+    } catch (err) {
+      console.warn('[Sync] Auto-save failed:', err);
+    }
+  }, 2000); // 2초 디바운스
+}
+
 interface DinoStore {
   // State
   dinos: Dino[];
@@ -20,6 +43,9 @@ interface DinoStore {
   updateStageProgress: (id: string, progress: number) => void;
   feedDino: (id: string) => void;
   playWithDino: (id: string) => void;
+  loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState }) => void;
+  getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState };
+  resetState: () => void;
 }
 
 function rollRarity(gacha: GachaState): DinoRarity {
@@ -100,6 +126,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
           ? { ...state.activeDino, stage: newStage, stageProgress: 0 }
           : state.activeDino,
     }));
+    scheduleSync();
   },
 
   pullGacha: (isPremium) => {
@@ -129,6 +156,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
         : { coins: state.coins - cost }),
     });
 
+    scheduleSync();
     return newDino;
   },
 
@@ -152,6 +180,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     const newHappiness = Math.min(100, dino.stats.happiness + 5);
     get().updateStats(id, { hunger: newHunger, happiness: newHappiness });
     get().updateEmotion(id, 'happy');
+    scheduleSync();
   },
 
   playWithDino: (id) => {
@@ -162,5 +191,43 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     const newFatigue = Math.min(100, dino.stats.fatigue + 10);
     get().updateStats(id, { happiness: newHappiness, fatigue: newFatigue });
     get().updateEmotion(id, 'excited');
+    scheduleSync();
+  },
+
+  loadFromCloud: (data) => {
+    const activeDino = data.activeDinoId
+      ? data.dinos.find((d) => d.id === data.activeDinoId) ?? null
+      : data.dinos[0] ?? null;
+    set({
+      dinos: data.dinos,
+      activeDinoId: activeDino?.id ?? null,
+      activeDino,
+      coins: data.coins,
+      premiumCurrency: data.premiumCurrency,
+      gacha: data.gacha,
+    });
+    console.log(`[DinoStore] Loaded from cloud: ${data.dinos.length} dinos, ${data.coins} coins`);
+  },
+
+  getSnapshot: () => {
+    const s = get();
+    return {
+      dinos: s.dinos,
+      activeDinoId: s.activeDinoId,
+      coins: s.coins,
+      premiumCurrency: s.premiumCurrency,
+      gacha: s.gacha,
+    };
+  },
+
+  resetState: () => {
+    set({
+      dinos: [],
+      activeDinoId: null,
+      activeDino: null,
+      coins: 100,
+      premiumCurrency: 0,
+      gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+    });
   },
 }));

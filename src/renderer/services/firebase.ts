@@ -25,6 +25,13 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+console.log('[Firebase] Config loaded:', {
+  apiKey: firebaseConfig.apiKey ? 'SET' : 'MISSING',
+  projectId: firebaseConfig.projectId ? 'SET' : 'MISSING',
+  authDomain: firebaseConfig.authDomain ? 'SET' : 'MISSING',
+  appId: firebaseConfig.appId ? 'SET' : 'MISSING',
+});
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -50,24 +57,26 @@ export function getCurrentUser(): User | null {
 
 /** Save user data to Firestore */
 export async function saveUserData(userData: UserData): Promise<void> {
-  const user = auth.currentUser;
-  if (!user) return;
+  const uid = userData.uid || auth.currentUser?.uid;
+  if (!uid) return;
 
-  await setDoc(doc(db, 'users', user.uid), {
+  await setDoc(doc(db, 'users', uid), {
     ...userData,
     lastSyncTime: Date.now(),
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  console.log('[Firebase] Data saved for', uid);
 }
 
 /** Load user data from Firestore */
-export async function loadUserData(): Promise<UserData | null> {
-  const user = auth.currentUser;
-  if (!user) return null;
+export async function loadUserData(uid?: string): Promise<UserData | null> {
+  const resolvedUid = uid || auth.currentUser?.uid;
+  if (!resolvedUid) return null;
 
-  const snapshot = await getDoc(doc(db, 'users', user.uid));
+  const snapshot = await getDoc(doc(db, 'users', resolvedUid));
   if (!snapshot.exists()) return null;
 
+  console.log('[Firebase] Data loaded for', resolvedUid);
   return snapshot.data() as UserData;
 }
 
