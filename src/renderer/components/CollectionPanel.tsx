@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
 import { SPECIES_DEFS, SELL_PRICES } from '@shared/constants';
 import type { Dino, DinoStage, DinoSpeciesId } from '@shared/types';
+import { MergeAnimation } from './MergeAnimation';
 
 interface CollectionPanelProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ dino: Dino; x: number; y: number } | null>(null);
   const [renameTarget, setRenameTarget] = useState<string | null>(null);
+  const [mergeAnim, setMergeAnim] = useState<{ species: DinoSpeciesId; from: DinoStage; to: DinoStage } | null>(null);
 
   const filtered = useMemo(() => {
     return stageFilter === 'all' ? dinos : dinos.filter((d) => d.stage === stageFilter);
@@ -251,7 +253,11 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          dispatch('mergeDinos', group.species, group.stage);
+                          const STAGE_ORDER: DinoStage[] = ['egg', 'baby', 'teen', 'adult'];
+                          const nextStage = STAGE_ORDER[STAGE_ORDER.indexOf(group.stage) + 1];
+                          if (nextStage) {
+                            setMergeAnim({ species: group.species, from: group.stage, to: nextStage });
+                          }
                         }}
                         style={{
                           background: 'rgba(251,191,36,0.15)',
@@ -389,6 +395,19 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
               );
             })}
           </div>
+
+          {/* Merge animation overlay */}
+          <MergeAnimation
+            species={mergeAnim?.species ?? null}
+            fromStage={mergeAnim?.from ?? null}
+            toStage={mergeAnim?.to ?? null}
+            onComplete={() => {
+              if (mergeAnim) {
+                dispatch('mergeDinos', mergeAnim.species, mergeAnim.from);
+              }
+              setMergeAnim(null);
+            }}
+          />
         </div>
   );
 }

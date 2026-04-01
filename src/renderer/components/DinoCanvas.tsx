@@ -45,8 +45,8 @@ export function DinoCanvas() {
         key={emotion}
         animate={EMOTION_ANIMATIONS[emotion]}
         style={{
-          width: 72,
-          height: 72,
+          width: 128,
+          height: 128,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -57,8 +57,8 @@ export function DinoCanvas() {
           <img
             src={`./assets/sprites/${activeDino.stage}/${activeDino.species}/sprite_${activeDino.stage}_${emotion}_01.png`}
             alt={activeDino.name}
-            width={72}
-            height={72}
+            width={128}
+            height={128}
             style={{ imageRendering: 'pixelated' }}
             draggable={false}
             onError={(e) => {
@@ -83,8 +83,8 @@ function EggPlaceholder() {
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       style={{
-        width: 72,
-        height: 72,
+        width: 128,
+        height: 128,
         borderRadius: '50%',
         background: 'linear-gradient(135deg, #4ade80, #22c55e)',
         display: 'flex',

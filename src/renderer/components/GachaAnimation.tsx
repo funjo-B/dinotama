@@ -30,18 +30,17 @@ export function GachaAnimation({ dino, onComplete }: GachaAnimationProps) {
   useEffect(() => {
     if (!dino) return;
     setPhase('shake');
-
-    const t1 = setTimeout(() => setPhase('crack'), 1200);
-    const t2 = setTimeout(() => setPhase('reveal'), 1800);
-    const t3 = setTimeout(() => onComplete(), 3500);
-
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [dino]);
 
   if (!dino) return null;
 
   const color = RARITY_COLORS[dino.rarity];
   const speciesName = SPECIES_DEFS[dino.species]?.nameKo ?? dino.species;
+
+  const handleClick = () => {
+    if (phase === 'reveal') onComplete();
+    else setPhase('reveal');
+  };
 
   return (
     <div
@@ -53,8 +52,9 @@ export function GachaAnimation({ dino, onComplete }: GachaAnimationProps) {
         justifyContent: 'center',
         background: 'rgba(0,0,0,0.7)',
         zIndex: 20000,
+        cursor: 'pointer',
       }}
-      onClick={onComplete}
+      onClick={handleClick}
     >
       <AnimatePresence mode="wait">
         {/* Phase 1: Egg shaking */}
@@ -74,11 +74,11 @@ export function GachaAnimation({ dino, onComplete }: GachaAnimationProps) {
           >
             🥚
             <motion.div
-              animate={{ opacity: [0, 1, 0, 1, 0] }}
-              transition={{ duration: 1.2 }}
+              animate={{ opacity: [0.3, 0.8, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
               style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}
             >
-              두근두근...
+              클릭하여 열기
             </motion.div>
           </motion.div>
         )}

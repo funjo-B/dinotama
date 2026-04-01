@@ -131,8 +131,8 @@ function registerWindowIPC(isDev: boolean) {
     }
 
     const [dinoX, dinoY] = mainWindow.getPosition();
-    const panelWidth = panel === 'collection' ? 300 : 260;
-    const panelHeight = 400;
+    const panelWidth = panel === 'collection' ? 300 : panel === 'gacha' ? 260 : 260;
+    const panelHeight = panel === 'gacha' ? 450 : 400;
 
     panelWindow = new BrowserWindow({
       width: panelWidth,

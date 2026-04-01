@@ -13,6 +13,7 @@ import { SPECIES_DEFS } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
 import { TodoReminder } from './components/TodoReminder';
 import { GachaAnimation } from './components/GachaAnimation';
+import { GachaPanel } from './components/GachaPanel';
 
 const TODO_STORAGE_KEY = 'dinotama-todos';
 const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
@@ -93,6 +94,13 @@ function PanelApp() {
   if (panelType === 'collection') {
     return <CollectionPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} onAction={handleAction} />;
   }
+  if (panelType === 'gacha') {
+    return <GachaPanel
+      isOpen={true}
+      onClose={() => window.dinoAPI?.closePanel?.()}
+      onPull={() => handleAction('pullGacha')}
+    />;
+  }
   return null;
 }
 
@@ -124,6 +132,14 @@ function DinoApp() {
         case 'sellDino': store.sellDino(args[0]); break;
         case 'renameDino': store.renameDino(args[0], args[1]); break;
         case 'mergeDinos': store.mergeDinos(args[0], args[1]); break;
+        case 'pullGacha': {
+          const result = store.pullGacha(false);
+          if (result) {
+            setGachaResult(result);
+            setGachaAnimating(true);
+          }
+          break;
+        }
       }
     });
     return () => { unsub?.(); };
@@ -195,7 +211,7 @@ function DinoApp() {
           ? [{ label: `✏️ 이름 변경 (${activeDino.name})`, action: () => { setRenameMode(true); setTimeout(() => renameInputRef.current?.focus(), 100); } }]
           : []),
         { type: 'separator' as const, label: '' },
-        { label: `🥚 알 뽑기 (💰${coins})`, action: handleGacha },
+        { label: `🥚 알 뽑기 (💰${coins})`, action: () => window.dinoAPI?.openPanel?.('gacha') },
         ...(dinos.length > 1
           ? [{
               label: '🦕 공룡 선택',
@@ -247,17 +263,17 @@ function DinoApp() {
         position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
         display: 'flex', flexDirection: 'column', gap: 4, zIndex: 100,
       }}>
-        <button onClick={() => window.dinoAPI?.openPanel?.('todo')} style={tabBtnStyle} title="TODO">📋</button>
-        <button onClick={() => window.dinoAPI?.openPanel?.('collection')} style={tabBtnStyle} title="컬렉션">📦</button>
-        <button
-          onClick={handleGacha}
+        <TipButton icon="📋" tip="TODO" onClick={() => window.dinoAPI?.openPanel?.('todo')} />
+        <TipButton icon="📦" tip="컬렉션" onClick={() => window.dinoAPI?.openPanel?.('collection')} />
+        <TipButton
+          icon="🥚"
+          tip={`알 뽑기 (💰${coins})`}
+          onClick={() => window.dinoAPI?.openPanel?.('gacha')}
           style={{
-            ...tabBtnStyle,
             background: coins >= 10 ? 'rgba(251,191,36,0.2)' : 'rgba(15,15,25,0.85)',
             borderColor: coins >= 10 ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.15)',
           }}
-          title={`알 뽑기 (${coins} 코인)`}
-        >🥚</button>
+        />
       </div>
 
       <NotificationPopup event={currentEvent} onOk={handleOk} onSnooze={handleSnooze} />
@@ -301,7 +317,7 @@ export default function App() {
   return isPanelWindow ? <PanelApp /> : <DinoApp />;
 }
 
-const tabBtnStyle: React.CSSProperties = {
+const tabBtnBase: React.CSSProperties = {
   background: 'rgba(15,15,25,0.85)',
   border: '1px solid rgba(255,255,255,0.15)',
   borderRadius: 8,
@@ -310,4 +326,39 @@ const tabBtnStyle: React.CSSProperties = {
   fontSize: 13,
   color: '#fff',
   backdropFilter: 'blur(8px)',
+  position: 'relative',
 };
+
+function TipButton({ icon, tip, onClick, style }: { icon: string; tip: string; onClick: () => void; style?: React.CSSProperties }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{ ...tabBtnBase, ...style }}
+      >
+        {icon}
+      </button>
+      {hover && (
+        <div style={{
+          position: 'absolute',
+          left: '100%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          marginLeft: 6,
+          background: 'rgba(0,0,0,0.9)',
+          color: '#e2e8f0',
+          fontSize: 10,
+          padding: '3px 8px',
+          borderRadius: 4,
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+        }}>
+          {tip}
+        </div>
+      )}
+    </div>
+  );
+}
