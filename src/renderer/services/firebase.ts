@@ -13,7 +13,7 @@ import {
   getDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import type { UserData } from '@shared/types';
+import type { UserData, TodoItem } from '@shared/types';
 import { SYNC_INTERVAL_MS } from '@shared/constants';
 
 const firebaseConfig = {
@@ -105,6 +105,24 @@ export function stopAutoSync() {
 /** Immediate sync (on important events) */
 export async function syncNow(userData: UserData): Promise<void> {
   await saveUserData(userData);
+}
+
+/** Save todos to Firestore (separate doc to avoid UserData conflicts) */
+export async function saveTodosToCloud(uid: string, todos: TodoItem[]): Promise<void> {
+  await setDoc(
+    doc(db, 'users', uid, 'data', 'todos'),
+    { items: todos, updatedAt: serverTimestamp() },
+    { merge: false }
+  );
+  console.log('[Firebase] Todos saved:', todos.length, 'items');
+}
+
+/** Load todos from Firestore */
+export async function loadTodosFromCloud(uid: string): Promise<TodoItem[] | null> {
+  const snap = await getDoc(doc(db, 'users', uid, 'data', 'todos'));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return Array.isArray(data.items) ? data.items : null;
 }
 
 export { auth, db };

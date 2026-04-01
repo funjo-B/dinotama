@@ -45,6 +45,15 @@ export interface GachaState {
   pullsSinceLegend: number;
 }
 
+export interface TodoItem {
+  id: string;
+  text: string;
+  done: boolean;
+  createdAt: number;
+  lastCheckedDate?: string;
+  notify: boolean;
+}
+
 export interface UserData {
   uid: string;
   displayName: string;
@@ -56,4 +65,5 @@ export interface UserData {
   gacha: GachaState;
   totalSold: number;
   lastSyncTime: number;
+  todos?: TodoItem[];
 }

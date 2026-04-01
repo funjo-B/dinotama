@@ -86,18 +86,18 @@ async function checkUpcomingEvents() {
   }
 }
 
-/* ─── Fetch today's events (for TodoPanel) ─── */
-export async function fetchTodayEvents(): Promise<
-  { id: string; title: string; startTime: string; endTime: string; location?: string }[]
-> {
+type CalendarEvent = { id: string; title: string; startTime: string; endTime: string; location?: string };
+
+/* ─── Fetch events for a given day offset (0=today, 1=tomorrow, -1=yesterday) ─── */
+export async function fetchEventsForDay(dayOffset = 0): Promise<CalendarEvent[]> {
   const auth = getAuthenticatedClient();
   if (!auth) return [];
 
   const calendar = google.calendar({ version: 'v3', auth });
 
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset);
+  const endOfDay   = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
   try {
     const response = await calendar.events.list({
@@ -116,9 +116,14 @@ export async function fetchTodayEvents(): Promise<
       location: event.location ?? undefined,
     }));
   } catch (err: any) {
-    console.error('[Calendar] Failed to fetch today events:', err.message);
+    console.error('[Calendar] Failed to fetch events:', err.message);
     return [];
   }
+}
+
+/* ─── Fetch today's events (for TodoPanel, backwards compat) ─── */
+export async function fetchTodayEvents(): Promise<CalendarEvent[]> {
+  return fetchEventsForDay(0);
 }
 
 /* ─── Start / Stop ─── */

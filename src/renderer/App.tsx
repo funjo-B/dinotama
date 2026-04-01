@@ -13,7 +13,11 @@ import { SPECIES_DEFS } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
 import { TodoReminder } from './components/TodoReminder';
 import { GachaAnimation } from './components/GachaAnimation';
+import { GachaMultiAnimation } from './components/GachaMultiAnimation';
 import { GachaPanel } from './components/GachaPanel';
+import { SettingsPanel } from './components/SettingsPanel';
+import { useSettingsStore } from './stores/settingsStore';
+import { useT, useSpeciesName } from './hooks/useT';
 
 const TODO_STORAGE_KEY = 'dinotama-todos';
 const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
@@ -98,8 +102,11 @@ function PanelApp() {
     return <GachaPanel
       isOpen={true}
       onClose={() => window.dinoAPI?.closePanel?.()}
-      onPull={() => handleAction('pullGacha')}
+      onPull={(count) => handleAction('pullGacha', count)}
     />;
+  }
+  if (panelType === 'settings') {
+    return <SettingsPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} />;
   }
   return null;
 }
@@ -108,13 +115,18 @@ function PanelApp() {
 function DinoApp() {
   const [gachaResult, setGachaResult] = useState<Dino | null>(null);
   const [gachaAnimating, setGachaAnimating] = useState(false);
+  const [gachaMultiResults, setGachaMultiResults] = useState<Dino[]>([]);
+  const [multiPullKey, setMultiPullKey] = useState(0);
   const [renameMode, setRenameMode] = useState(false);
   const [todoReminder, setTodoReminder] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const { alarmIntervalMin, backgroundVisible, setBackgroundVisible } = useSettingsStore();
+  const t = useT();
+  const getSpeciesName = useSpeciesName();
   const { onMouseDown } = useDrag();
   const { showMenu } = useContextMenu();
-  const { activeDino, dinos, pullGacha, coins, setActiveDino, renameDino, sellDino } = useDinoStore();
+  const { activeDino, dinos, pullGacha, pullGachaMulti, coins, setActiveDino, renameDino, sellDino } = useDinoStore();
   const { currentEvent, handleOk, handleSnooze } = useCalendarNotifications();
 
   // Expose store snapshot for panel windows
@@ -133,10 +145,13 @@ function DinoApp() {
         case 'renameDino': store.renameDino(args[0], args[1]); break;
         case 'mergeDinos': store.mergeDinos(args[0], args[1]); break;
         case 'pullGacha': {
-          const result = store.pullGacha(false);
-          if (result) {
-            setGachaResult(result);
-            setGachaAnimating(true);
+          const count: number = args[0] ?? 1;
+          if (count === 1) {
+            const result = store.pullGacha(false);
+            if (result) { setGachaResult(result); setGachaAnimating(true); }
+          } else {
+            const results = store.pullGachaMulti(count, false);
+            if (results.length > 0) { setGachaMultiResults(results); setMultiPullKey((k) => k + 1); }
           }
           break;
         }
@@ -152,18 +167,21 @@ function DinoApp() {
     setTodoReminder(random);
   }, []);
 
-  // Auto reminder: random interval 20~40 min
+  // Auto reminder — interval from settings (0 = off)
   useEffect(() => {
+    if (alarmIntervalMin === 0) return;
+    const ms = alarmIntervalMin * 60 * 1000;
     function scheduleNext() {
-      const delay = randomInterval(20 * 60 * 1000, 40 * 60 * 1000);
+      // ±20% jitter so it doesn't feel robotic
+      const jitter = randomInterval(ms * 0.8, ms * 1.2);
       return setTimeout(() => {
         triggerTodoReminder();
         timerRef.current = scheduleNext();
-      }, delay);
+      }, jitter);
     }
     const timerRef = { current: scheduleNext() };
     return () => clearTimeout(timerRef.current);
-  }, [triggerTodoReminder]);
+  }, [triggerTodoReminder, alarmIntervalMin]);
 
   const handleTodoOk = useCallback(() => {
     // Mark this todo as done in localStorage
@@ -185,14 +203,16 @@ function DinoApp() {
     setTodoReminder(null);
   }, []);
 
-  const handleGacha = useCallback(() => {
-    if (gachaAnimating) return;
-    const result = pullGacha(false);
-    if (result) {
-      setGachaResult(result);
-      setGachaAnimating(true);
+  const handleGacha = useCallback((count: number = 1) => {
+    if (gachaAnimating || gachaMultiResults.length > 0) return;
+    if (count === 1) {
+      const result = pullGacha(false);
+      if (result) { setGachaResult(result); setGachaAnimating(true); }
+    } else {
+      const results = pullGachaMulti(count, false);
+      if (results.length > 0) { setGachaMultiResults(results); setMultiPullKey((k) => k + 1); }
     }
-  }, [pullGacha, gachaAnimating]);
+  }, [pullGacha, pullGachaMulti, gachaAnimating, gachaMultiResults]);
 
   const handleGachaComplete = useCallback(() => {
     setGachaAnimating(false);
@@ -208,44 +228,45 @@ function DinoApp() {
     (e: React.MouseEvent) => {
       const items: MenuItem[] = [
         ...(activeDino
-          ? [{ label: `✏️ 이름 변경 (${activeDino.name})`, action: () => { setRenameMode(true); setTimeout(() => renameInputRef.current?.focus(), 100); } }]
+          ? [{ label: t.menu.rename(activeDino.name), action: () => { setRenameMode(true); setTimeout(() => renameInputRef.current?.focus(), 100); } }]
           : []),
         { type: 'separator' as const, label: '' },
-        { label: `🥚 알 뽑기 (💰${coins})`, action: () => window.dinoAPI?.openPanel?.('gacha') },
+        { label: t.menu.gacha(coins), action: () => window.dinoAPI?.openPanel?.('gacha') },
         ...(dinos.length > 1
           ? [{
-              label: '🦕 공룡 선택',
+              label: t.menu.selectDino,
               submenu: [
                 ...dinos.slice(0, 5).map((d) => {
-                  const sName = SPECIES_DEFS[d.species]?.nameKo ?? d.species;
-                  const stageLabel = { egg: '🥚알', baby: '🐣아기', teen: '🦕청소년', adult: '🦖성체' }[d.stage];
+                  const sName = getSpeciesName(SPECIES_DEFS[d.species], d.species);
+                  const stageLabel = t.menu.stage[d.stage];
                   const check = d.id === activeDino?.id ? ' ✓' : '';
                   return { label: `${d.name} (${sName}/${stageLabel})${check}`, action: () => setActiveDino(d.id) };
                 }),
                 ...(dinos.length > 5
-                  ? [{ type: 'separator' as const, label: '' }, { label: `📦 전체 보기 (${dinos.length}마리)`, action: () => window.dinoAPI?.openPanel?.('collection') }]
+                  ? [{ type: 'separator' as const, label: '' }, { label: t.menu.viewAll(dinos.length), action: () => window.dinoAPI?.openPanel?.('collection') }]
                   : []),
               ],
             }]
           : []),
         { type: 'separator' as const, label: '' },
-        { label: '📦 컬렉션', action: () => window.dinoAPI?.openPanel?.('collection') },
-        { label: '📋 TODO', action: () => window.dinoAPI?.openPanel?.('todo') },
-        { label: '🔔 TODO 알림 테스트', action: triggerTodoReminder },
-        { label: '💰 코인 1000 충전 (테스트)', action: () => useDinoStore.setState((s) => ({ coins: s.coins + 1000 })) },
+        { label: t.menu.collection, action: () => window.dinoAPI?.openPanel?.('collection') },
+        { label: t.menu.todo, action: () => window.dinoAPI?.openPanel?.('todo') },
+        { label: t.menu.settings, action: () => window.dinoAPI?.openPanel?.('settings') },
+        { label: t.menu.testAlarm, action: triggerTodoReminder },
+        { label: t.menu.addCoins, action: () => useDinoStore.setState((s) => ({ coins: s.coins + 1000 })) },
         { type: 'separator' as const, label: '' },
         {
-          label: '📍 위치',
+          label: t.menu.position,
           submenu: [
-            { label: '🔄 위치 초기화', action: () => window.dinoAPI?.resetPosition?.() },
-            { label: '💾 현재 위치 기억', action: () => window.dinoAPI?.savePosition?.() },
-            { label: '📍 기억한 위치로 이동', action: () => window.dinoAPI?.restorePosition?.() },
+            { label: t.menu.resetPos, action: () => window.dinoAPI?.resetPosition?.() },
+            { label: t.menu.savePos, action: () => window.dinoAPI?.savePosition?.() },
+            { label: t.menu.restorePos, action: () => window.dinoAPI?.restorePosition?.() },
           ],
         },
         { type: 'separator' as const, label: '' },
         user
-          ? { label: '🔓 로그아웃', action: () => window.dinoAPI?.authLogout() }
-          : { label: '🔐 Google 로그인', action: () => window.dinoAPI?.authLogin() },
+          ? { label: t.menu.logout, action: () => window.dinoAPI?.authLogout() }
+          : { label: t.menu.login, action: () => window.dinoAPI?.authLogin() },
       ];
       showMenu(e, items);
     },
@@ -254,7 +275,17 @@ function DinoApp() {
 
   return (
     <div
-      style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        background: backgroundVisible ? '#ffffff' : 'transparent',
+        borderRadius: backgroundVisible ? 12 : 0,
+        transition: 'background 0.3s ease',
+      }}
       onMouseDown={onMouseDown}
       onContextMenu={handleContextMenu}
     >
@@ -263,11 +294,12 @@ function DinoApp() {
         position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
         display: 'flex', flexDirection: 'column', gap: 4, zIndex: 100,
       }}>
-        <TipButton icon="📋" tip="TODO" onClick={() => window.dinoAPI?.openPanel?.('todo')} />
-        <TipButton icon="📦" tip="컬렉션" onClick={() => window.dinoAPI?.openPanel?.('collection')} />
+        <TipButton icon="📋" tip={t.tip.todo} onClick={() => window.dinoAPI?.openPanel?.('todo')} />
+        <TipButton icon="📦" tip={t.tip.collection} onClick={() => window.dinoAPI?.openPanel?.('collection')} />
+        <TipButton icon="⚙️" tip={t.tip.settings} onClick={() => window.dinoAPI?.openPanel?.('settings')} />
         <TipButton
           icon="🥚"
-          tip={`알 뽑기 (💰${coins})`}
+          tip={t.tip.gacha(coins)}
           onClick={() => window.dinoAPI?.openPanel?.('gacha')}
           style={{
             background: coins >= 10 ? 'rgba(251,191,36,0.2)' : 'rgba(15,15,25,0.85)',
@@ -276,18 +308,51 @@ function DinoApp() {
         />
       </div>
 
+      {/* Background toggle — right side */}
+      <div style={{
+        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+        zIndex: 100,
+      }}>
+        <TipButton
+          icon={backgroundVisible ? '⬜' : '🔲'}
+          tip={backgroundVisible ? (t.settings.bgOn) : (t.settings.bgOff)}
+          onClick={() => setBackgroundVisible(!backgroundVisible)}
+          style={{
+            background: backgroundVisible ? 'rgba(255,255,255,0.3)' : 'rgba(15,15,25,0.85)',
+            borderColor: backgroundVisible ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)',
+          }}
+        />
+      </div>
+
       <NotificationPopup event={currentEvent} onOk={handleOk} onSnooze={handleSnooze} />
       <TodoReminder message={todoReminder} onOk={handleTodoOk} onSnooze={handleTodoSnooze} />
       <GachaAnimation dino={gachaAnimating ? gachaResult : null} onComplete={handleGachaComplete} />
+      {gachaMultiResults.length > 0 && (
+        <GachaMultiAnimation key={multiPullKey} dinos={gachaMultiResults} onComplete={() => setGachaMultiResults([])} />
+      )}
+
+      {/* Login indicator — top right corner */}
+      {user && (
+        <div
+          title={user.displayName ?? 'Google 로그인됨'}
+          style={{
+            position: 'absolute', top: 8, right: 8,
+            display: 'flex', alignItems: 'center', gap: 4,
+            zIndex: 200, pointerEvents: 'none',
+          }}
+        >
+          <span style={{ fontSize: 9, color: '#4ade80', opacity: 0.8 }}>
+            {user.displayName?.split(' ')[0] ?? ''}
+          </span>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#4ade80',
+            boxShadow: '0 0 6px #4ade80',
+          }} />
+        </div>
+      )}
 
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {user && (
-          <div style={{
-            position: 'absolute', top: -2, right: -2,
-            width: 10, height: 10, borderRadius: '50%',
-            background: '#4ade80', border: '2px solid rgba(0,0,0,0.3)', zIndex: 10,
-          }} title={user.displayName ?? 'Google 로그인됨'} />
-        )}
         <DinoCanvas />
         {renameMode && activeDino && (
           <div style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>

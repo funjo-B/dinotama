@@ -3,6 +3,7 @@ import path from 'path';
 
 let mainWindow: BrowserWindow | null = null;
 let panelWindow: BrowserWindow | null = null;
+let panelOpening = false;
 
 const DINO_WIDTH = 320;
 const DINO_HEIGHT = 280;
@@ -115,26 +116,28 @@ function registerWindowIPC(isDev: boolean) {
   // ─── Open/close panel as separate window next to dino ───
 
   ipcMain.handle('dino:open-panel', (_event, panel: string) => {
-    if (!mainWindow) return;
+    if (!mainWindow || panelOpening) return;
 
     // Toggle: if same panel is open, close it
     if (panelWindow && !panelWindow.isDestroyed()) {
       const currentHash = panelWindow.webContents.getURL();
       if (currentHash.includes(`#panel-${panel}`)) {
-        panelWindow.close();
+        panelWindow.destroy();
         panelWindow = null;
         return;
       }
       // Different panel requested — close old, open new
-      panelWindow.close();
+      panelWindow.destroy();
       panelWindow = null;
     }
 
-    const [dinoX, dinoY] = mainWindow.getPosition();
-    const panelWidth = panel === 'collection' ? 300 : panel === 'gacha' ? 260 : 260;
-    const panelHeight = panel === 'gacha' ? 450 : 400;
+    panelOpening = true;
 
-    panelWindow = new BrowserWindow({
+    const [dinoX, dinoY] = mainWindow.getPosition();
+    const panelWidth = panel === 'collection' ? 300 : panel === 'gacha' ? 260 : panel === 'settings' ? 260 : 260;
+    const panelHeight = panel === 'gacha' ? 450 : panel === 'settings' ? 320 : 400;
+
+    const win = new BrowserWindow({
       width: panelWidth,
       height: panelHeight,
       x: dinoX - panelWidth - PANEL_GAP,
@@ -152,29 +155,34 @@ function registerWindowIPC(isDev: boolean) {
       },
     });
 
-    panelWindow.setAlwaysOnTop(true, 'screen-saver');
+    panelWindow = win;
+    panelOpening = false;
+
+    win.setAlwaysOnTop(true, 'screen-saver');
 
     if (isDev) {
       const port = process.env.VITE_DEV_PORT || '5173';
-      panelWindow.loadURL(`http://localhost:${port}#panel-${panel}`);
+      win.loadURL(`http://localhost:${port}#panel-${panel}`);
     } else {
-      panelWindow.loadFile(path.join(__dirname, '../../renderer/index.html'), {
+      win.loadFile(path.join(__dirname, '../../renderer/index.html'), {
         hash: `panel-${panel}`,
       });
     }
 
-    panelWindow.on('closed', () => {
-      panelWindow = null;
-      // Notify main window
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('dino:panel-closed');
+    win.on('closed', () => {
+      // Only clear if this is still the current panel (prevents orphan overwrite)
+      if (panelWindow === win) {
+        panelWindow = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('dino:panel-closed');
+        }
       }
     });
   });
 
   ipcMain.handle('dino:close-panel', () => {
     if (panelWindow && !panelWindow.isDestroyed()) {
-      panelWindow.close();
+      panelWindow.destroy();
       panelWindow = null;
     }
   });

@@ -1,14 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface TodoItem {
-  id: string;
-  text: string;
-  done: boolean;
-  createdAt: number;
-  lastCheckedDate?: string; // YYYY-MM-DD when last checked
-  notify: boolean; // per-item alarm on/off
-}
+import type { TodoItem } from '@shared/types';
+import { saveTodosToCloud, loadTodosFromCloud } from '../services/firebase';
+import { useAuth } from '../hooks/useAuth';
+import { useT } from '../hooks/useT';
 
 const STORAGE_KEY = 'dinotama-todos';
 const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
@@ -69,31 +64,77 @@ function isPast(end: string): boolean {
 }
 
 export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
+  const { user } = useAuth();
+  const t = useT();
+  const tt = t.todo;
   const [todos, setTodosRaw] = useState<TodoItem[]>(loadTodos);
   const [input, setInput] = useState('');
   const [calendarEvents, setCalendarEvents] = useState<CalendarItem[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [dayOffset, setDayOffset] = useState(0);
+  const [cloudSyncing, setCloudSyncing] = useState(false);
   const [globalNotify, setGlobalNotifyRaw] = useState<boolean>(() => {
     try { return localStorage.getItem(NOTIFY_GLOBAL_KEY) !== 'false'; } catch { return true; }
   });
+  const cloudSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setGlobalNotify = useCallback((on: boolean) => {
     setGlobalNotifyRaw(on);
     localStorage.setItem(NOTIFY_GLOBAL_KEY, String(on));
   }, []);
 
-  // Wrapper that persists to localStorage
+  // Cloud save: debounced 1.5s after last change
+  const scheduleCloudSave = useCallback((items: TodoItem[]) => {
+    if (!user) return;
+    if (cloudSaveTimer.current) clearTimeout(cloudSaveTimer.current);
+    cloudSaveTimer.current = setTimeout(async () => {
+      try {
+        setCloudSyncing(true);
+        await saveTodosToCloud(user.uid, items);
+      } catch (err) {
+        console.error('[Todo] Cloud save failed:', err);
+      } finally {
+        setCloudSyncing(false);
+      }
+    }, 1500);
+  }, [user]);
+
+  // Wrapper: localStorage 즉시 저장 + Firebase 디바운스 저장
   const setTodos = useCallback((updater: TodoItem[] | ((prev: TodoItem[]) => TodoItem[])) => {
     setTodosRaw((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
       saveTodos(next);
+      scheduleCloudSave(next);
       return next;
     });
-  }, []);
+  }, [scheduleCloudSave]);
 
   const toggleItemNotify = useCallback((id: string) => {
     setTodos((prev) => prev.map((t) => t.id === id ? { ...t, notify: !t.notify } : t));
   }, [setTodos]);
+
+  // 로그인 시 Firebase에서 로드 → 로컬보다 최신이면 덮어쓰기
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const cloudItems = await loadTodosFromCloud(user.uid);
+        if (!cloudItems) return; // 첫 사용자, 로컬 유지
+        const local = loadTodos();
+        // 클라우드 항목 중 로컬에 없는 것 병합 (id 기준)
+        const localIds = new Set(local.map((t) => t.id));
+        const merged = [
+          ...local,
+          ...cloudItems.filter((t) => !localIds.has(t.id)),
+        ].sort((a, b) => a.createdAt - b.createdAt);
+        setTodosRaw(merged);
+        saveTodos(merged);
+        console.log('[Todo] Loaded from cloud:', cloudItems.length, 'items, merged:', merged.length);
+      } catch (err) {
+        console.error('[Todo] Cloud load failed:', err);
+      }
+    })();
+  }, [user]);
 
   // Reload todos when window gets focus (sync with main window changes)
   useEffect(() => {
@@ -102,17 +143,17 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  // Fetch calendar events when panel opens
+  // Fetch calendar events when panel opens or day changes
   useEffect(() => {
     if (!isOpen) return;
-    if (!window.dinoAPI?.calendarToday) return;
+    if (!window.dinoAPI?.calendarDay) return;
 
     setCalendarLoading(true);
-    window.dinoAPI.calendarToday()
+    window.dinoAPI.calendarDay(dayOffset)
       .then((events) => setCalendarEvents(events ?? []))
       .catch(() => setCalendarEvents([]))
       .finally(() => setCalendarLoading(false));
-  }, [isOpen]);
+  }, [isOpen, dayOffset]);
 
   const addTodo = useCallback(() => {
     const text = input.trim();
@@ -170,8 +211,13 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>
-              TODO {todos.length > 0 && `(${doneCount}/${todos.length})`}
+            <span style={{ fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+              {tt.title} {todos.length > 0 && `(${doneCount}/${todos.length})`}
+              {user && (
+                <span style={{ fontSize: 8, color: cloudSyncing ? '#fbbf24' : '#4ade80', fontWeight: 400 }}>
+                  {cloudSyncing ? tt.syncing : tt.syncDone}
+                </span>
+              )}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ position: 'relative' }}>
@@ -206,7 +252,7 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
                   transition: 'opacity 0.15s',
                   pointerEvents: 'none',
                 }}>
-                  전체 알림 {globalNotify ? 'ON' : 'OFF'}
+                  {globalNotify ? tt.notifyOn : tt.notifyOff}
                 </span>
               </div>
               <button
@@ -226,17 +272,57 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
           </div>
 
           {/* Calendar Section */}
-          {calendarEvents.length > 0 && (
+          {(calendarEvents.length > 0 || calendarLoading || window.dinoAPI?.calendarDay) && (
             <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              {/* Date nav header */}
               <div style={{
-                padding: '8px 14px 4px',
-                fontSize: 11,
-                color: '#94a3b8',
-                fontWeight: 600,
+                padding: '6px 10px 2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}>
-                오늘 일정
+                <button
+                  onClick={() => setDayOffset((d) => d - 1)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1 }}
+                >‹</button>
+                <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textAlign: 'center', lineHeight: 1.4 }}>
+                  {(() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + dayOffset);
+                    const month = d.getMonth() + 1;
+                    const date = d.getDate();
+                    const days = tt.days;
+                    const day = days[d.getDay()];
+                    const label = dayOffset === 0 ? tt.dateLabel.today
+                      : dayOffset === 1 ? tt.dateLabel.tomorrow
+                      : dayOffset === -1 ? tt.dateLabel.yesterday
+                      : dayOffset > 0 ? tt.dateLabel.daysAfter(dayOffset)
+                      : tt.dateLabel.daysBefore(dayOffset);
+                    return (
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <span style={{ fontSize: 10, color: '#64748b' }}>{label}</span>
+                        <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 700 }}>{tt.formatDate(month, date)} ({day})</span>
+                      </span>
+                    );
+                  })()}
+                  {dayOffset !== 0 && (
+                    <button
+                      onClick={() => setDayOffset(0)}
+                      style={{ display: 'block', background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 9, marginTop: 2, padding: 0, width: '100%', textAlign: 'center' }}
+                    >{tt.backToToday}</button>
+                  )}
+                </span>
+                <button
+                  onClick={() => setDayOffset((d) => d + 1)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1 }}
+                >›</button>
               </div>
               <div style={{ padding: '0 8px 8px', maxHeight: 150, overflowY: 'auto' }}>
+                {!calendarLoading && calendarEvents.length === 0 && (
+                  <div style={{ padding: '6px 6px', fontSize: 10, color: '#475569', textAlign: 'center' }}>
+                    {tt.noSchedule}
+                  </div>
+                )}
                 {calendarEvents.map((evt) => {
                   const past = isPast(evt.endTime);
                   const now = isNow(evt.startTime, evt.endTime);
@@ -299,7 +385,7 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="할 일 추가..."
+                placeholder={tt.addPlaceholder}
                 style={{
                   flex: 1,
                   background: 'rgba(255,255,255,0.07)',
@@ -338,7 +424,7 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
                 color: '#64748b',
                 fontSize: 11,
               }}>
-                할 일이 없습니다
+                {tt.empty}
               </div>
             )}
             {todos.map((todo) => (

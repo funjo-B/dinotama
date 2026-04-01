@@ -45,6 +45,9 @@ const dinoAPI = {
   calendarToday: () => ipcRenderer.invoke('dino:calendar-today') as Promise<
     { id: string; title: string; startTime: string; endTime: string; location?: string }[]
   >,
+  calendarDay: (dayOffset: number) => ipcRenderer.invoke('dino:calendar-day', dayOffset) as Promise<
+    { id: string; title: string; startTime: string; endTime: string; location?: string }[]
+  >,
 
   // Events from main process
   onDeepLink: (callback: (data: { action: string; params: Record<string, string>; path: string }) => void) => {

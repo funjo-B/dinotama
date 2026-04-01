@@ -4,7 +4,7 @@ import { createServer, type Server } from 'http';
 import { URL } from 'url';
 import { getMainWindow } from './window';
 import { refreshTrayMenu } from './tray';
-import { startCalendarPolling, stopCalendarPolling, fetchTodayEvents } from './calendar';
+import { startCalendarPolling, stopCalendarPolling, fetchTodayEvents, fetchEventsForDay } from './calendar';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Store = require('electron-store');
@@ -81,6 +81,10 @@ export function setupAuthIPC() {
 
   ipcMain.handle('dino:calendar-today', async () => {
     return fetchTodayEvents();
+  });
+
+  ipcMain.handle('dino:calendar-day', async (_event, dayOffset: number) => {
+    return fetchEventsForDay(dayOffset ?? 0);
   });
 
   // Tray menu triggers (within main process)

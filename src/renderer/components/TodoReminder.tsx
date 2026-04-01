@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useT } from '../hooks/useT';
 
 interface TodoReminderProps {
   message: string | null;
@@ -8,6 +9,7 @@ interface TodoReminderProps {
 }
 
 export function TodoReminder({ message, onOk, onSnooze }: TodoReminderProps) {
+  const t = useT();
   if (!message) return null;
 
   return (
@@ -34,7 +36,7 @@ export function TodoReminder({ message, onOk, onSnooze }: TodoReminderProps) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div style={{ fontSize: 11, color: '#4ade80', marginBottom: 4 }}>
-          🦕 이거 했어?
+          {t.reminder.title}
         </div>
         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
           {message}
@@ -54,7 +56,7 @@ export function TodoReminder({ message, onOk, onSnooze }: TodoReminderProps) {
               cursor: 'pointer',
             }}
           >
-            했어! ✓
+            {t.reminder.done}
           </button>
           <button
             onClick={onSnooze}
@@ -69,7 +71,7 @@ export function TodoReminder({ message, onOk, onSnooze }: TodoReminderProps) {
               cursor: 'pointer',
             }}
           >
-            나중에 ⏰
+            {t.reminder.later}
           </button>
         </div>
       </motion.div>

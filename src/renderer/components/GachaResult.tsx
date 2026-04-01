@@ -51,7 +51,16 @@ export function GachaResult({ dino, onClose }: GachaResultProps) {
           <div style={{ color: RARITY_CONFIG[dino.rarity].color, fontWeight: 700, marginBottom: 2 }}>
             {RARITY_CONFIG[dino.rarity].label}
           </div>
-          <div>🥚 {SPECIES_DEFS[dino.species]?.nameKo ?? '???'} 획득!</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <img
+              src={`./assets/sprites/baby/${dino.species}/sprite_baby_idle_01.png`}
+              width={20}
+              height={20}
+              style={{ imageRendering: 'pixelated' }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+            <span>{SPECIES_DEFS[dino.species]?.nameKo ?? '???'} 부화!</span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

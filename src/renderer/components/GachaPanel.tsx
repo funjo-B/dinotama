@@ -2,11 +2,12 @@ import React, { useCallback } from 'react';
 import { GACHA_RATES, SPECIES_POOL, SPECIES_DEFS, PITY_THRESHOLDS } from '@shared/constants';
 import type { DinoRarity } from '@shared/types';
 import { useDinoStore } from '../stores/dinoStore';
+import { useT, useSpeciesName } from '../hooks/useT';
 
 interface GachaPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onPull: () => void;
+  onPull: (count: number) => void;
 }
 
 const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; stars: string }> = {
@@ -19,6 +20,8 @@ const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; stars: s
 const RARITY_ORDER: DinoRarity[] = ['legend', 'epic', 'rare', 'common'];
 
 export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
+  const t = useT();
+  const getSpeciesName = useSpeciesName();
   const { coins, gacha } = useDinoStore();
 
   if (!isOpen) return null;
@@ -43,7 +46,7 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
         alignItems: 'center',
       }}>
         <span style={{ fontWeight: 700, fontSize: 13 }}>
-          🥚 알 뽑기
+          {t.gachaPanel.title}
         </span>
         <button onClick={onClose} style={{
           background: 'none', border: 'none', color: '#94a3b8',
@@ -51,35 +54,76 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
         }}>✕</button>
       </div>
 
-      {/* Coins + Pull button */}
+      {/* Coins + Pull buttons */}
       <div style={{
         padding: '12px 14px',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         display: 'flex',
-        alignItems: 'center',
-        gap: 10,
+        flexDirection: 'column',
+        gap: 6,
       }}>
-        <button
-          onClick={onPull}
-          disabled={coins < 10}
-          style={{
-            flex: 1,
-            padding: '10px 0',
-            border: 'none',
-            borderRadius: 8,
-            background: coins >= 10
-              ? 'linear-gradient(135deg, #fbbf24, #f97316)'
-              : 'rgba(255,255,255,0.1)',
-            color: coins >= 10 ? '#000' : '#64748b',
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: coins >= 10 ? 'pointer' : 'not-allowed',
-          }}
-        >
-          🥚 뽑기 (💰10)
-        </button>
-        <div style={{ textAlign: 'right', fontSize: 11 }}>
-          <div style={{ color: '#fbbf24', fontWeight: 700 }}>💰 {coins}</div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+          <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 11 }}>💰 {coins}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => onPull(1)}
+            disabled={coins < 10}
+            style={{
+              flex: 1,
+              padding: '9px 0',
+              border: 'none',
+              borderRadius: 8,
+              background: coins >= 10
+                ? 'linear-gradient(135deg, #fbbf24, #f97316)'
+                : 'rgba(255,255,255,0.1)',
+              color: coins >= 10 ? '#000' : '#64748b',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: coins >= 10 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {t.gachaPanel.pull1}
+          </button>
+          <button
+            onClick={() => onPull(5)}
+            disabled={coins < 50}
+            style={{
+              flex: 1,
+              padding: '9px 0',
+              border: 'none',
+              borderRadius: 8,
+              background: coins >= 50
+                ? 'linear-gradient(135deg, #60a5fa, #6366f1)'
+                : 'rgba(255,255,255,0.1)',
+              color: coins >= 50 ? '#fff' : '#64748b',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: coins >= 50 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {t.gachaPanel.pull5}
+          </button>
+          <button
+            onClick={() => onPull(10)}
+            disabled={coins < 100}
+            style={{
+              flex: 1,
+              padding: '9px 0',
+              border: 'none',
+              borderRadius: 8,
+              background: coins >= 100
+                ? 'linear-gradient(135deg, #c084fc, #ec4899)'
+                : 'rgba(255,255,255,0.1)',
+              color: coins >= 100 ? '#fff' : '#64748b',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: coins >= 100 ? 'pointer' : 'not-allowed',
+              lineHeight: 1.3,
+            }}
+          >
+            {t.gachaPanel.pull10}<br />💰100
+          </button>
         </div>
       </div>
 
@@ -92,8 +136,8 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
         display: 'flex',
         gap: 12,
       }}>
-        <span>Epic 천장: {gacha.pullsSinceEpic}/{PITY_THRESHOLDS.epic}</span>
-        <span>Legend 천장: {gacha.pullsSinceLegend}/{PITY_THRESHOLDS.legend}</span>
+        <span>{t.gachaPanel.epicPity(gacha.pullsSinceEpic, PITY_THRESHOLDS.epic)}</span>
+        <span>{t.gachaPanel.legendPity(gacha.pullsSinceLegend, PITY_THRESHOLDS.legend)}</span>
       </div>
 
       {/* Rates + Species list */}
@@ -144,7 +188,7 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
                         background: def.baseColor, flexShrink: 0,
                       }} />
                       <span style={{ fontSize: 11, color: '#cbd5e1' }}>
-                        {def.nameKo}
+                        {getSpeciesName(def)}
                       </span>
                       <span style={{ fontSize: 9, color: '#64748b' }}>
                         {def.nameEn}
@@ -166,7 +210,7 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
         color: '#475569',
         textAlign: 'center',
       }}>
-        총 {gacha.totalPulls}회 뽑기 완료
+        {t.gachaPanel.totalPulls(gacha.totalPulls)}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DinoStage, DinoSpeciesId, DinoRarity } from '@shared/types';
 import { SPECIES_DEFS } from '@shared/constants';
+import { useT, useSpeciesName } from '../hooks/useT';
 
 interface MergeAnimationProps {
   species: DinoSpeciesId | null;
@@ -20,6 +21,8 @@ const STAGE_EMOJI: Record<DinoStage, string> = {
 type Phase = 'before' | 'flash' | 'after';
 
 export function MergeAnimation({ species, fromStage, toStage, onComplete }: MergeAnimationProps) {
+  const t = useT();
+  const getSpeciesName = useSpeciesName();
   const [phase, setPhase] = useState<Phase>('before');
 
   useEffect(() => {
@@ -85,7 +88,7 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
               transition={{ duration: 1, repeat: Infinity }}
               style={{ fontSize: 10, color: '#94a3b8' }}
             >
-              합성 중...
+              {t.merge.merging}
             </motion.div>
           </motion.div>
         )}
@@ -131,12 +134,10 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
               />
             </motion.div>
             <div style={{ color, fontWeight: 700, fontSize: 13 }}>
-              합성 성공!
+              {t.merge.success}
             </div>
             <div style={{ color: '#fff', fontSize: 12 }}>
-              {def?.nameKo ?? species} → {STAGE_EMOJI[toStage]} {
-                { egg: '알', baby: '유년기', teen: '성장기', adult: '성체' }[toStage]
-              }
+              {getSpeciesName(def, species)} → {STAGE_EMOJI[toStage]} {t.merge.stageLabel[toStage]}
             </div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -144,7 +145,7 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
               transition={{ delay: 0.5, duration: 2, repeat: Infinity }}
               style={{ color: '#64748b', fontSize: 9, marginTop: 4 }}
             >
-              클릭하여 닫기
+              {t.merge.clickToClose}
             </motion.div>
           </motion.div>
         )}

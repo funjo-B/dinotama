@@ -4,27 +4,7 @@ import { useDinoStore } from '../stores/dinoStore';
 import { SPECIES_DEFS, SELL_PRICES } from '@shared/constants';
 import type { Dino, DinoStage, DinoSpeciesId } from '@shared/types';
 import { MergeAnimation } from './MergeAnimation';
-
-interface CollectionPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAction?: (action: string, ...args: any[]) => void;
-}
-
-const STAGE_LABELS: Record<DinoStage, string> = {
-  egg: '🥚 알',
-  baby: '🐣 유년기',
-  teen: '🦕 성장기',
-  adult: '🦖 성체',
-};
-
-const STAGE_FILTERS: { label: string; value: DinoStage | 'all' }[] = [
-  { label: '전체', value: 'all' },
-  { label: '🥚', value: 'egg' },
-  { label: '🐣', value: 'baby' },
-  { label: '🦕', value: 'teen' },
-  { label: '🦖', value: 'adult' },
-];
+import { useT, useSpeciesName } from '../hooks/useT';
 
 interface DinoGroup {
   species: DinoSpeciesId;
@@ -33,6 +13,8 @@ interface DinoGroup {
 }
 
 export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelProps) {
+  const t = useT();
+  const getSpeciesName = useSpeciesName();
   const { dinos, activeDinoId, coins, totalSold } = useDinoStore();
   const setActiveDino = useDinoStore((s) => s.setActiveDino);
   const sellDino = useDinoStore((s) => s.sellDino);
@@ -148,7 +130,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
             alignItems: 'center',
           }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>
-              📦 컬렉션 ({dinos.length}마리)
+              {t.collection.title(dinos.length)}
             </span>
             <button
               onClick={onClose}
@@ -171,7 +153,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
             color: '#94a3b8',
           }}>
             <span>💰 {coins}</span>
-            <span>판매 {totalSold}회</span>
+            <span>{t.collection.sold(totalSold)}</span>
           </div>
 
           {/* Stage filter */}
@@ -181,32 +163,35 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
             display: 'flex',
             gap: 4,
           }}>
-            {STAGE_FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setStageFilter(f.value)}
-                style={{
-                  flex: 1,
-                  padding: '4px 0',
-                  border: 'none',
-                  borderRadius: 4,
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  background: stageFilter === f.value ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.05)',
-                  color: stageFilter === f.value ? '#4ade80' : '#94a3b8',
-                  fontWeight: stageFilter === f.value ? 700 : 400,
-                }}
-              >
-                {f.label}
-              </button>
-            ))}
+            {(['all', 'egg', 'baby', 'teen', 'adult'] as const).map((v) => {
+              const label = v === 'all' ? t.collection.all : t.collection.stageFilter[v];
+              return (
+                <button
+                  key={v}
+                  onClick={() => setStageFilter(v)}
+                  style={{
+                    flex: 1,
+                    padding: '4px 0',
+                    border: 'none',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    background: stageFilter === v ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.05)',
+                    color: stageFilter === v ? '#4ade80' : '#94a3b8',
+                    fontWeight: stageFilter === v ? 700 : 400,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Groups */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {groups.length === 0 && (
               <div style={{ padding: 20, textAlign: 'center', color: '#64748b', fontSize: 11 }}>
-                보유한 공룡이 없습니다
+                {t.collection.empty}
               </div>
             )}
             {groups.map((group) => {
@@ -237,10 +222,10 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                       flexShrink: 0,
                     }} />
                     <span style={{ flex: 1, fontWeight: 600 }}>
-                      {def?.nameKo ?? group.species}
+                      {getSpeciesName(def, group.species)}
                     </span>
                     <span style={{ fontSize: 10, color: rarityColor }}>
-                      {STAGE_LABELS[group.stage]}
+                      {t.collection.stageLabel[group.stage]}
                     </span>
                     <span style={{
                       fontSize: 11, fontWeight: 700,
@@ -273,7 +258,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                         onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251,191,36,0.3)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(251,191,36,0.15)')}
                       >
-                        합성 ⚡
+                        {t.collection.merge}
                       </button>
                     )}
                     <span style={{ fontSize: 9, color: '#64748b' }}>
@@ -338,7 +323,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                               </span>
                             )}
                             <span style={{ fontSize: 9, color: '#64748b' }}>
-                              {new Date(dino.birthTime).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                              {t.todo.formatShortDate(new Date(dino.birthTime))}
                             </span>
                           </div>
                         ))}
@@ -366,7 +351,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                             >
-                              🦕 대표로 설정
+                              {t.collection.setActive}
                             </div>
                             <div
                               onClick={handleRenameStart}
@@ -374,7 +359,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
                               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                             >
-                              ✏️ 이름 변경
+                              {t.collection.rename}
                             </div>
                             {dinos.length > 1 && (
                               <div
@@ -383,7 +368,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                                 onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(248,113,113,0.1)')}
                                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                               >
-                                💰 되팔기 (+{SELL_PRICES[contextMenu.dino.rarity]}코인)
+                                {t.collection.sell(SELL_PRICES[contextMenu.dino.rarity])}
                               </div>
                             )}
                           </div>

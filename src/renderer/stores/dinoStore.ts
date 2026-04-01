@@ -47,6 +47,7 @@ interface DinoStore {
   setActiveEmotion: (emotion: DinoEmotion) => void;
   mergeDinos: (species: DinoSpeciesId, stage: DinoStage) => Dino | null;
   pullGacha: (isPremium: boolean) => Dino | null;
+  pullGachaMulti: (count: number, isPremium: boolean) => Dino[];
   renameDino: (id: string, newName: string) => void;
   sellDino: (id: string) => void;
   loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
@@ -199,6 +200,40 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
 
     scheduleSync();
     return newDino;
+  },
+
+  pullGachaMulti: (count, isPremium) => {
+    const state = get();
+    const costPer = isPremium ? 1 : 10;
+    const totalCost = costPer * count;
+    const currency = isPremium ? state.premiumCurrency : state.coins;
+
+    if (currency < totalCost) return [];
+
+    const results: Dino[] = [];
+    let gacha = { ...state.gacha };
+
+    for (let i = 0; i < count; i++) {
+      const rarity = rollRarity(gacha);
+      const dino = createDino(rarity);
+      results.push(dino);
+      gacha = {
+        totalPulls: gacha.totalPulls + 1,
+        pullsSinceEpic: rarity === 'epic' || rarity === 'legend' ? 0 : gacha.pullsSinceEpic + 1,
+        pullsSinceLegend: rarity === 'legend' ? 0 : gacha.pullsSinceLegend + 1,
+      };
+    }
+
+    set({
+      dinos: [...state.dinos, ...results],
+      gacha,
+      ...(isPremium
+        ? { premiumCurrency: state.premiumCurrency - totalCost }
+        : { coins: state.coins - totalCost }),
+    });
+
+    scheduleSync();
+    return results;
   },
 
   renameDino: (id, newName) => {

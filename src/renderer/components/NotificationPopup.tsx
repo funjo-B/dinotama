@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useT } from '../hooks/useT';
 
 export interface CalendarEvent {
   id: string;
@@ -16,6 +17,7 @@ interface NotificationPopupProps {
 }
 
 export function NotificationPopup({ event, onOk, onSnooze }: NotificationPopupProps) {
+  const t = useT();
   if (!event) return null;
 
   const minutesUntil = Math.ceil(event.timeUntilMs / 60000);
@@ -45,7 +47,7 @@ export function NotificationPopup({ event, onOk, onSnooze }: NotificationPopupPr
         }}
       >
         <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>
-          📅 {minutesUntil}분 후 일정
+          {t.notify.minutesUntil(minutesUntil)}
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
           {event.title}
@@ -85,7 +87,7 @@ export function NotificationPopup({ event, onOk, onSnooze }: NotificationPopupPr
               cursor: 'pointer',
             }}
           >
-            5분 후 ⏰
+            {t.notify.snooze}
           </button>
         </div>
       </motion.div>
