@@ -247,6 +247,29 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                     }}>
                       x{group.dinos.length}
                     </span>
+                    {group.dinos.length >= 3 && group.stage !== 'adult' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dispatch('mergeDinos', group.species, group.stage);
+                        }}
+                        style={{
+                          background: 'rgba(251,191,36,0.15)',
+                          border: '1px solid rgba(251,191,36,0.4)',
+                          borderRadius: 4,
+                          padding: '2px 6px',
+                          fontSize: 9,
+                          color: '#fbbf24',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251,191,36,0.3)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(251,191,36,0.15)')}
+                      >
+                        합성 ⚡
+                      </button>
+                    )}
                     <span style={{ fontSize: 9, color: '#64748b' }}>
                       {expanded ? '▼' : '▶'}
                     </span>

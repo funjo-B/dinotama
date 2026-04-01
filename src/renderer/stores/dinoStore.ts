@@ -45,9 +45,8 @@ interface DinoStore {
   setActiveDino: (id: string) => void;
   updateActiveStats: (stats: Partial<DinoStats>) => void;
   setActiveEmotion: (emotion: DinoEmotion) => void;
-  evolve: (id: string, newStage: DinoStage) => void;
+  mergeDinos: (species: DinoSpeciesId, stage: DinoStage) => Dino | null;
   pullGacha: (isPremium: boolean) => Dino | null;
-  updateStageProgress: (id: string, progress: number) => void;
   renameDino: (id: string, newName: string) => void;
   sellDino: (id: string) => void;
   loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
@@ -142,18 +141,36 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     set({ activeEmotion: emotion });
   },
 
-  evolve: (id, newStage) => {
-    set((state) => {
-      const newDinos = state.dinos.map((d) =>
-        d.id === id ? { ...d, stage: newStage, stageProgress: 0 } : d
-      );
-      const updated = newDinos.find((d) => d.id === id) ?? null;
-      return {
-        dinos: newDinos,
-        activeDino: state.activeDinoId === id ? updated : state.activeDino,
-      };
+  mergeDinos: (species, stage) => {
+    const STAGE_ORDER: DinoStage[] = ['egg', 'baby', 'teen', 'adult'];
+    const stageIdx = STAGE_ORDER.indexOf(stage);
+    if (stageIdx < 0 || stageIdx >= STAGE_ORDER.length - 1) return null; // can't merge adults
+
+    const nextStage = STAGE_ORDER[stageIdx + 1];
+    const state = get();
+    const candidates = state.dinos.filter((d) => d.species === species && d.stage === stage);
+    if (candidates.length < 3) return null;
+
+    // Take first 3, remove 2, evolve 1
+    const toRemove = candidates.slice(1, 3).map((d) => d.id);
+    const toEvolve = candidates[0];
+
+    const evolved: Dino = { ...toEvolve, stage: nextStage, stageProgress: 0 };
+    const newDinos = state.dinos
+      .filter((d) => !toRemove.includes(d.id))
+      .map((d) => d.id === toEvolve.id ? evolved : d);
+
+    const newActive = state.activeDinoId === toEvolve.id || toRemove.includes(state.activeDinoId ?? '')
+      ? evolved
+      : state.activeDino;
+
+    set({
+      dinos: newDinos,
+      activeDinoId: newActive?.id ?? state.activeDinoId,
+      activeDino: newActive,
     });
     scheduleSync();
+    return evolved;
   },
 
   pullGacha: (isPremium) => {
@@ -175,10 +192,6 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     set({
       dinos: [...state.dinos, newDino],
       gacha: newGacha,
-      activeDinoId: newDino.id,
-      activeDino: newDino,
-      activeStats: { ...DEFAULT_STATS },
-      activeEmotion: 'idle',
       ...(isPremium
         ? { premiumCurrency: state.premiumCurrency - cost }
         : { coins: state.coins - cost }),
@@ -186,19 +199,6 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
 
     scheduleSync();
     return newDino;
-  },
-
-  updateStageProgress: (id, progress) => {
-    set((state) => {
-      const newDinos = state.dinos.map((d) =>
-        d.id === id ? { ...d, stageProgress: progress } : d
-      );
-      const updated = newDinos.find((d) => d.id === id) ?? null;
-      return {
-        dinos: newDinos,
-        activeDino: state.activeDinoId === id ? updated : state.activeDino,
-      };
-    });
   },
 
   renameDino: (id, newName) => {

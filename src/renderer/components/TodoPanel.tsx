@@ -7,9 +7,11 @@ interface TodoItem {
   done: boolean;
   createdAt: number;
   lastCheckedDate?: string; // YYYY-MM-DD when last checked
+  notify: boolean; // per-item alarm on/off
 }
 
 const STORAGE_KEY = 'dinotama-todos';
+const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
 
 function getTodayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -21,12 +23,13 @@ function loadTodos(): TodoItem[] {
     if (!raw) return [];
     const items: TodoItem[] = JSON.parse(raw);
     const today = getTodayStr();
-    // Reset done status if checked on a previous day
+    // Reset done status if checked on a previous day + ensure notify field
     return items.map((t) => {
+      const notify = t.notify ?? true; // default on for old items
       if (t.done && t.lastCheckedDate && t.lastCheckedDate !== today) {
-        return { ...t, done: false, lastCheckedDate: undefined };
+        return { ...t, done: false, lastCheckedDate: undefined, notify };
       }
-      return t;
+      return { ...t, notify };
     });
   } catch {
     return [];
@@ -70,6 +73,14 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
   const [input, setInput] = useState('');
   const [calendarEvents, setCalendarEvents] = useState<CalendarItem[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [globalNotify, setGlobalNotifyRaw] = useState<boolean>(() => {
+    try { return localStorage.getItem(NOTIFY_GLOBAL_KEY) !== 'false'; } catch { return true; }
+  });
+
+  const setGlobalNotify = useCallback((on: boolean) => {
+    setGlobalNotifyRaw(on);
+    localStorage.setItem(NOTIFY_GLOBAL_KEY, String(on));
+  }, []);
 
   // Wrapper that persists to localStorage
   const setTodos = useCallback((updater: TodoItem[] | ((prev: TodoItem[]) => TodoItem[])) => {
@@ -78,6 +89,17 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
       saveTodos(next);
       return next;
     });
+  }, []);
+
+  const toggleItemNotify = useCallback((id: string) => {
+    setTodos((prev) => prev.map((t) => t.id === id ? { ...t, notify: !t.notify } : t));
+  }, [setTodos]);
+
+  // Reload todos when window gets focus (sync with main window changes)
+  useEffect(() => {
+    const handleFocus = () => setTodosRaw(loadTodos());
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Fetch calendar events when panel opens
@@ -97,7 +119,7 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
     if (!text) return;
     setTodos((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), text, done: false, createdAt: Date.now() },
+      { id: crypto.randomUUID(), text, done: false, createdAt: Date.now(), notify: true },
     ]);
     setInput('');
   }, [input, setTodos]);
@@ -151,19 +173,56 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
             <span style={{ fontWeight: 700, fontSize: 13 }}>
               TODO {todos.length > 0 && `(${doneCount}/${todos.length})`}
             </span>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                fontSize: 16,
-                padding: '0 2px',
-              }}
-            >
-              ✕
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setGlobalNotify(!globalNotify)}
+                  onMouseEnter={(e) => { const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { const tip = e.currentTarget.nextElementSibling as HTMLElement; if (tip) tip.style.opacity = '0'; }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    padding: '0 2px',
+                    opacity: globalNotify ? 1 : 0.4,
+                  }}
+                >
+                  {globalNotify ? '🔔' : '🔕'}
+                </button>
+                <span style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginTop: 4,
+                  background: 'rgba(0,0,0,0.85)',
+                  color: globalNotify ? '#4ade80' : '#94a3b8',
+                  fontSize: 9,
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  whiteSpace: 'nowrap',
+                  opacity: 0,
+                  transition: 'opacity 0.15s',
+                  pointerEvents: 'none',
+                }}>
+                  전체 알림 {globalNotify ? 'ON' : 'OFF'}
+                </span>
+              </div>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  padding: '0 2px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Calendar Section */}
@@ -331,18 +390,34 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
                   {todo.text}
                 </span>
                 <button
-                  onClick={() => deleteTodo(todo.id)}
+                  onClick={(e) => { e.stopPropagation(); toggleItemNotify(todo.id); }}
+                  title={todo.notify ? '알림 ON' : '알림 OFF'}
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#475569',
                     cursor: 'pointer',
                     fontSize: 11,
-                    padding: '0 2px',
-                    opacity: 0.5,
+                    padding: '2px 4px',
+                    opacity: todo.notify ? 0.8 : 0.3,
+                    flexShrink: 0,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.5')}
+                >
+                  {todo.notify ? '🔔' : '🔕'}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    padding: '2px 6px',
+                    opacity: 0.6,
+                    borderRadius: 4,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'none'; }}
                 >
                   ✕
                 </button>

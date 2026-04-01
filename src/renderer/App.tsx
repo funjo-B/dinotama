@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { DinoCanvas } from './components/DinoCanvas';
 import { NotificationPopup } from './components/NotificationPopup';
-import { GachaResult } from './components/GachaResult';
 import { TodoPanel } from './components/TodoPanel';
 import { CollectionPanel } from './components/CollectionPanel';
 import { useDrag } from './hooks/useDrag';
@@ -9,10 +8,40 @@ import { useContextMenu } from './hooks/useContextMenu';
 import { useCalendarNotifications } from './hooks/useCalendarNotifications';
 import { useAuth } from './hooks/useAuth';
 import { useDinoStore } from './stores/dinoStore';
-import { getNextStage } from './stores/growthFSM';
 import type { Dino } from '@shared/types';
 import { SPECIES_DEFS } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
+import { TodoReminder } from './components/TodoReminder';
+import { GachaAnimation } from './components/GachaAnimation';
+
+const TODO_STORAGE_KEY = 'dinotama-todos';
+const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
+
+function isGlobalNotifyOn(): boolean {
+  try { return localStorage.getItem(NOTIFY_GLOBAL_KEY) !== 'false'; } catch { return true; }
+}
+
+function getNotifiableUndoneTodos(): string[] {
+  try {
+    if (!isGlobalNotifyOn()) return [];
+    const raw = localStorage.getItem(TODO_STORAGE_KEY);
+    if (!raw) return [];
+    const items = JSON.parse(raw);
+    const today = new Date().toISOString().slice(0, 10);
+    return items
+      .filter((t: any) => {
+        const undone = !t.done || (t.lastCheckedDate && t.lastCheckedDate !== today);
+        const notifyOn = t.notify !== false; // default true
+        return undone && notifyOn;
+      })
+      .map((t: any) => t.text);
+  } catch { return []; }
+}
+
+// Random interval between min and max ms
+function randomInterval(minMs: number, maxMs: number): number {
+  return minMs + Math.random() * (maxMs - minMs);
+}
 
 // Detect if this is a panel window
 const hash = window.location.hash;
@@ -70,12 +99,14 @@ function PanelApp() {
 // ─── Main Dino Window App ───
 function DinoApp() {
   const [gachaResult, setGachaResult] = useState<Dino | null>(null);
+  const [gachaAnimating, setGachaAnimating] = useState(false);
   const [renameMode, setRenameMode] = useState(false);
+  const [todoReminder, setTodoReminder] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { onMouseDown } = useDrag();
   const { showMenu } = useContextMenu();
-  const { activeDino, dinos, pullGacha, coins, evolve, setActiveDino, renameDino, sellDino } = useDinoStore();
+  const { activeDino, dinos, pullGacha, coins, setActiveDino, renameDino, sellDino } = useDinoStore();
   const { currentEvent, handleOk, handleSnooze } = useCalendarNotifications();
 
   // Expose store snapshot for panel windows
@@ -92,15 +123,65 @@ function DinoApp() {
         case 'setActiveDino': store.setActiveDino(args[0]); break;
         case 'sellDino': store.sellDino(args[0]); break;
         case 'renameDino': store.renameDino(args[0], args[1]); break;
+        case 'mergeDinos': store.mergeDinos(args[0], args[1]); break;
       }
     });
     return () => { unsub?.(); };
   }, []);
 
+  const triggerTodoReminder = useCallback(() => {
+    const todos = getNotifiableUndoneTodos();
+    if (todos.length === 0) return; // nothing to remind
+    const random = todos[Math.floor(Math.random() * todos.length)];
+    setTodoReminder(random);
+  }, []);
+
+  // Auto reminder: random interval 20~40 min
+  useEffect(() => {
+    function scheduleNext() {
+      const delay = randomInterval(20 * 60 * 1000, 40 * 60 * 1000);
+      return setTimeout(() => {
+        triggerTodoReminder();
+        timerRef.current = scheduleNext();
+      }, delay);
+    }
+    const timerRef = { current: scheduleNext() };
+    return () => clearTimeout(timerRef.current);
+  }, [triggerTodoReminder]);
+
+  const handleTodoOk = useCallback(() => {
+    // Mark this todo as done in localStorage
+    try {
+      const raw = localStorage.getItem(TODO_STORAGE_KEY);
+      if (raw && todoReminder) {
+        const items = JSON.parse(raw);
+        const today = new Date().toISOString().slice(0, 10);
+        const updated = items.map((t: any) =>
+          t.text === todoReminder ? { ...t, done: true, lastCheckedDate: today } : t
+        );
+        localStorage.setItem(TODO_STORAGE_KEY, JSON.stringify(updated));
+      }
+    } catch {}
+    setTodoReminder(null);
+  }, [todoReminder]);
+
+  const handleTodoSnooze = useCallback(() => {
+    setTodoReminder(null);
+  }, []);
+
   const handleGacha = useCallback(() => {
+    if (gachaAnimating) return;
     const result = pullGacha(false);
-    if (result) setGachaResult(result);
-  }, [pullGacha]);
+    if (result) {
+      setGachaResult(result);
+      setGachaAnimating(true);
+    }
+  }, [pullGacha, gachaAnimating]);
+
+  const handleGachaComplete = useCallback(() => {
+    setGachaAnimating(false);
+    setGachaResult(null);
+  }, []);
 
   const handleRename = useCallback((newName: string) => {
     if (activeDino && newName.trim()) renameDino(activeDino.id, newName);
@@ -109,13 +190,9 @@ function DinoApp() {
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
-      const nextStage = activeDino ? getNextStage(activeDino.stage) : null;
       const items: MenuItem[] = [
         ...(activeDino
           ? [{ label: `✏️ 이름 변경 (${activeDino.name})`, action: () => { setRenameMode(true); setTimeout(() => renameInputRef.current?.focus(), 100); } }]
-          : []),
-        ...(activeDino && nextStage
-          ? [{ label: `⚡ 진화! (${activeDino.stage}→${nextStage})`, action: () => evolve(activeDino.id, nextStage) }]
           : []),
         { type: 'separator' as const, label: '' },
         { label: `🥚 알 뽑기 (💰${coins})`, action: handleGacha },
@@ -138,6 +215,8 @@ function DinoApp() {
         { type: 'separator' as const, label: '' },
         { label: '📦 컬렉션', action: () => window.dinoAPI?.openPanel?.('collection') },
         { label: '📋 TODO', action: () => window.dinoAPI?.openPanel?.('todo') },
+        { label: '🔔 TODO 알림 테스트', action: triggerTodoReminder },
+        { label: '💰 코인 1000 충전 (테스트)', action: () => useDinoStore.setState((s) => ({ coins: s.coins + 1000 })) },
         { type: 'separator' as const, label: '' },
         {
           label: '📍 위치',
@@ -154,7 +233,7 @@ function DinoApp() {
       ];
       showMenu(e, items);
     },
-    [activeDino, dinos, handleGacha, showMenu, coins, user, setActiveDino, renameDino, evolve]
+    [activeDino, dinos, handleGacha, showMenu, coins, user, setActiveDino, renameDino, triggerTodoReminder]
   );
 
   return (
@@ -170,9 +249,20 @@ function DinoApp() {
       }}>
         <button onClick={() => window.dinoAPI?.openPanel?.('todo')} style={tabBtnStyle} title="TODO">📋</button>
         <button onClick={() => window.dinoAPI?.openPanel?.('collection')} style={tabBtnStyle} title="컬렉션">📦</button>
+        <button
+          onClick={handleGacha}
+          style={{
+            ...tabBtnStyle,
+            background: coins >= 10 ? 'rgba(251,191,36,0.2)' : 'rgba(15,15,25,0.85)',
+            borderColor: coins >= 10 ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.15)',
+          }}
+          title={`알 뽑기 (${coins} 코인)`}
+        >🥚</button>
       </div>
 
       <NotificationPopup event={currentEvent} onOk={handleOk} onSnooze={handleSnooze} />
+      <TodoReminder message={todoReminder} onOk={handleTodoOk} onSnooze={handleTodoSnooze} />
+      <GachaAnimation dino={gachaAnimating ? gachaResult : null} onComplete={handleGachaComplete} />
 
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {user && (
@@ -202,7 +292,6 @@ function DinoApp() {
             />
           </div>
         )}
-        <GachaResult dino={gachaResult} onClose={() => setGachaResult(null)} />
       </div>
     </div>
   );
