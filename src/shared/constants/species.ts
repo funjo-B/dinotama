@@ -12,11 +12,11 @@ export const SPRITE_FRAME_COUNTS: Record<string, number> = {
 };
 
 export const SELL_PRICES: Record<DinoRarity, number> = {
-  common: 5,
-  rare: 15,
-  epic: 50,
-  legend: 200,
-  hidden: 500,
+  common: 3,
+  rare: 5,
+  epic: 10,
+  legend: 50,
+  hidden: 100,
 };
 
 // 단계별 판매가 배율: 유년기 ×1 / 성장기 ×2 / 성체 ×4

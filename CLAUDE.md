@@ -8,10 +8,12 @@ Windows/macOS 모니터 구석에 항상 떠있는 공룡 다마고치 데스크
 - **UI**: React 18 + Framer Motion
 - **State**: Zustand (local) + Firebase Firestore (cloud sync)
 - **Auth**: Google OAuth via Firebase Auth
-- **Payment**: Stripe Checkout (고급알 유료화)
+- **Payment**: Stripe Checkout (고급알 유료화, 스캐폴드)
 - **Calendar**: Google Calendar API
+- **Ad Reward**: Firebase Functions (v2) + Firebase Hosting
 - **Notification**: node-notifier + custom UI
-- **Animation**: Sprite sheets (72×72px) + Rive
+- **Animation**: Sprite sheets (128×128px)
+- **i18n**: 자체 구현 (i18n.ts + useT 훅, 한/영)
 - **Build**: electron-builder (Windows NSIS / macOS DMG)
 
 ## Architecture
@@ -19,30 +21,42 @@ Windows/macOS 모니터 구석에 항상 떠있는 공룡 다마고치 데스크
 Main Process (Electron)
 ├── Transparent BrowserWindow (always-on-top)
 ├── System Tray
-├── Deep Link Handler (dinotama://auth)
+├── Deep Link Handler (dinotama://auth, dinotama://reward)
 ├── IPC Bridge → Renderer
-└── Auto-updater
+├── Google Calendar Polling (싱글톤 OAuth2 + 선제 토큰 갱신)
+├── Ad Reward IPC (openAdReward, validateAdReward)
+└── Auth (OAuth flow + token persistence)
 
 Renderer Process (React)
-├── DinoCanvas (sprite animation)
+├── DinoCanvas (sprite animation, 128px)
 ├── Game Logic (Zustand store)
-│   ├── Growth FSM (egg→baby→teen→adult)
-│   ├── Stats (hunger/happiness/fatigue)
-│   ├── Gacha System (pity included)
+│   ├── Growth FSM (baby→teen→adult)
+│   ├── Gacha System (5 rarity + pity)
+│   ├── Ad Reward (grantAdReward, clipboard fallback)
 │   └── Emotion Triggers
-├── Notification UI (calendar alerts)
-├── Firebase Sync (30min + event-driven)
-└── Stripe Checkout (in-app)
+├── Panels (별도 BrowserWindow)
+│   ├── GachaPanel (뽑기 + 광고 보상)
+│   ├── CollectionPanel (컬렉션 + 합성 + 되팔기)
+│   ├── TodoPanel (할일 + Calendar)
+│   └── SettingsPanel (언어, 알람, 배경)
+├── Firebase Sync (30min + event-driven, 변경 없으면 skip)
+└── Notification UI (calendar + todo reminder)
+
+Firebase Backend
+├── Hosting (랜딩 + 가이드 + 광고 보상 페이지)
+└── Functions v2 (claimReward + validateReward)
 ```
 
 ## Key Conventions
-- Sprite naming: `sprite_<stage>_<emotion>_<frame>.png` (72×72px)
-- Stages: `egg`, `baby`, `teen`, `adult`
+- Sprite naming: `sprite_<stage>_<emotion>_<frame>.png` (128×128px)
+- Stages: `baby`, `teen`, `adult` (알 단계 없음)
 - Emotions: `idle`, `happy`, `sad`, `hungry`, `sleepy`, `excited`
 - IPC channels prefixed with `dino:`
-- Firebase collections: `users/{uid}/dinos`, `users/{uid}/gacha`
-- Gacha rates: Common 60% / Rare 25% / Epic 12% / Legend 3%
-- Pity system: Epic guaranteed within 50 pulls, Legend within 100
+- Firebase collections: `users/{uid}`, `users/{uid}/data/todos`, `rewardTokens/{nonce}`, `rewardClaims/{uid}`
+- Gacha rates: Common 50% / Rare 30% / Epic 15% / Legend 4% / Hidden 1%
+- Pity system: Epic 50회 / Legend 100회 / Hidden 300회
+- Sell prices: common 3 / rare 5 / epic 10 / legend 50 / hidden 100
+- Stage sell multiplier: baby ×1 / teen ×2 / adult ×4
 
 ## Commands
 ```bash
@@ -56,14 +70,15 @@ npm run test         # Vitest
 
 ## 커밋 & 푸시 규칙
 사용자가 "커밋푸시" 또는 "커밋 및 푸시" 요청 시 아래 순서로 실행:
-1. `git status` + `git diff --stat`으로 변경 내용 확인
-2. TODO.md 최신화 (완료 항목 체크, 새 작업 추가, 현재 상태 요약 업데이트)
-3. 변경 파일 `git add` (관련 파일만 선택적으로)
-4. 한글 커밋 메시지 작성 — 수정/추가된 내용 상세히 기술
-5. `git push`
-6. 커밋 메시지 형식:
+1. `git status` + `git diff --stat` + `git log --oneline -5`으로 변경 내용 및 최근 커밋 스타일 확인
+2. TODO.md 최신화 (완료 항목 체크, 새 스프린트 추가, 현재 상태 요약 업데이트)
+3. CLAUDE.md도 변경사항이 있으면 업데이트 (확률, 가격, 아키텍처 등)
+4. 변경 파일 `git add` (관련 파일만 선택적으로, `.env` 등 시크릿 파일 절대 포함 금지)
+5. 한글 커밋 메시지 작성 — 수정/추가된 내용 상세히 기술
+6. `git push`
+7. 커밋 메시지 형식:
 ```
-feat/fix/refactor: 한줄 요약
+feat/fix/refactor/docs: 한줄 요약
 
 ## 수정 내용
 - 항목1
@@ -75,20 +90,33 @@ feat/fix/refactor: 한줄 요약
 Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 ```
 
+### 커밋 시 주의사항
+- `.env`, 시크릿 키, Firebase 서비스 계정 파일 절대 커밋 금지
+- `node_modules/`, `dist/`, `release/`, `.firebase/` 등 빌드 산출물 커밋 금지
+- 커밋 전 빌드 확인 (`npx vite build` + `npx tsc -p tsconfig.main.json`)
+- Firebase 배포가 포함된 경우 `npx firebase-tools deploy` 먼저 실행 후 커밋
+- 웹 호스팅 변경 시 `hosting/` 폴더 커밋 포함
+
 ## Species System
-- 10종: raptor, trex, pterodactyl, triceratops, stegosaurus, brachiosaurus, ankylosaurus, parasaurolophus, spinosaurus, dilophosaurus
-- 레어도별 풀: common 3종 / rare 3종 / epic 2종 / legend 2종
-- 스프라이트 경로: `public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_01.png`
-- 판매 가격: common 5 / rare 15 / epic 50 / legend 200
+- 29종: 5레어도 (Common 8종 / Rare 8종 / Epic 7종 / Legend 5종 / Hidden 1종)
+- 스프라이트 경로: `public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_{frame}.png`
+- Hidden 종은 가챠 패널에서 "???" 으로 표시 (비공개)
 
 ## Window Architecture
 - 공룡 창: 320x280 고정 (transparent, always-on-top)
-- 패널(TODO/컬렉션): 별도 BrowserWindow로 공룡 창 좌측에 생성
+- 패널(TODO/컬렉션/가챠/설정): 별도 BrowserWindow로 공룡 창 좌측에 생성
 - 패널↔메인 데이터 동기화: IPC `dino:get-store-snapshot` + `dino:panel-action`
+
+## Firebase Backend
+- 프로젝트: `dinotama-dff44`
+- Hosting: `https://dinotama-dff44.web.app`
+- Functions (v2, us-central1): `claimReward`, `validateReward`
+- Secret: `REWARD_HMAC_SECRET` (Firebase Secret Manager)
+- 배포: `npx firebase-tools deploy --only hosting,functions`
 
 ## Agent Roles
 - **pm-agent**: CLAUDE.md/TODO.md 관리, 스프린트 계획, GitHub Issues
-- **dev-agent**: Electron 메인 프로세스, 창 관리, 트레이, 빌드
+- **dev-agent**: Electron 메인 프로세스, 창 관리, 트레이, 빌드, Firebase 배포
 - **game-agent**: 성장 FSM, 가챠, 감정 시스템
 - **notify-agent**: Google Calendar 연동, 알림 스케줄러, Firebase 동기화
-- **asset-agent**: 스프라이트, Rive 애니메이션, 에셋 구조
+- **asset-agent**: 스프라이트, 에셋 구조

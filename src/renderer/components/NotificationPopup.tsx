@@ -28,20 +28,19 @@ export function NotificationPopup({ event, onOk, onSnooze }: NotificationPopupPr
         initial={{ opacity: 0, y: -20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -20, scale: 0.9 }}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
           top: 10,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          left: 10,
+          right: 10,
           background: 'rgba(20, 20, 30, 0.95)',
           borderRadius: 12,
           padding: '12px 16px',
-          minWidth: 220,
-          maxWidth: 300,
           color: '#fff',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
           backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid rgba(96, 165, 250, 0.3)',
           zIndex: 10000,
           WebkitAppRegion: 'no-drag',
         }}

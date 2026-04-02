@@ -12,20 +12,28 @@ function getTodayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function resetDoneForNewDay(items: TodoItem[]): TodoItem[] {
+  const today = getTodayStr();
+  return items.map((t) => {
+    const notify = t.notify ?? true;
+    if (t.done && t.lastCheckedDate && t.lastCheckedDate !== today) {
+      return { ...t, done: false, lastCheckedDate: undefined, notify };
+    }
+    return { ...t, notify };
+  });
+}
+
 function loadTodos(): TodoItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const items: TodoItem[] = JSON.parse(raw);
-    const today = getTodayStr();
-    // Reset done status if checked on a previous day + ensure notify field
-    return items.map((t) => {
-      const notify = t.notify ?? true; // default on for old items
-      if (t.done && t.lastCheckedDate && t.lastCheckedDate !== today) {
-        return { ...t, done: false, lastCheckedDate: undefined, notify };
-      }
-      return { ...t, notify };
-    });
+    const reset = resetDoneForNewDay(items);
+    // Save back if any items were reset
+    if (JSON.stringify(reset) !== JSON.stringify(items)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reset));
+    }
+    return reset;
   } catch {
     return [];
   }
@@ -113,9 +121,12 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
     setTodos((prev) => prev.map((t) => t.id === id ? { ...t, notify: !t.notify } : t));
   }, [setTodos]);
 
-  // 로그인 시 Firebase에서 로드 → 로컬보다 최신이면 덮어쓰기
+  // 로그인 시 Firebase에서 로드 (1회만) → 로컬보다 최신이면 덮어쓰기
+  const cloudLoadedRef = useRef(false);
   useEffect(() => {
-    if (!user) return;
+    if (!user) { cloudLoadedRef.current = false; return; }
+    if (cloudLoadedRef.current) return; // Already loaded for this user
+    cloudLoadedRef.current = true;
     (async () => {
       try {
         const cloudItems = await loadTodosFromCloud(user.uid);
@@ -123,10 +134,10 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
         const local = loadTodos();
         // 클라우드 항목 중 로컬에 없는 것 병합 (id 기준)
         const localIds = new Set(local.map((t) => t.id));
-        const merged = [
+        const merged = resetDoneForNewDay([
           ...local,
           ...cloudItems.filter((t) => !localIds.has(t.id)),
-        ].sort((a, b) => a.createdAt - b.createdAt);
+        ].sort((a, b) => a.createdAt - b.createdAt));
         setTodosRaw(merged);
         saveTodos(merged);
         console.log('[Todo] Loaded from cloud:', cloudItems.length, 'items, merged:', merged.length);
@@ -142,6 +153,20 @@ export function TodoPanel({ isOpen, onClose }: TodoPanelProps) {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  // Auto-reset at midnight: check every minute if day changed
+  useEffect(() => {
+    let lastDay = getTodayStr();
+    const interval = setInterval(() => {
+      const now = getTodayStr();
+      if (now !== lastDay) {
+        lastDay = now;
+        console.log('[Todo] Day changed, resetting done status');
+        setTodos((prev) => resetDoneForNewDay(prev));
+      }
+    }, 60_000); // check every minute
+    return () => clearInterval(interval);
+  }, [setTodos]);
 
   // Fetch calendar events when panel opens or day changes
   useEffect(() => {

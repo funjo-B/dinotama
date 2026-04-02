@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinoTama - Desktop Dinosaur Tamagotchi</title>
+  <meta name="description" content="모니터 구석에 사는 공룡 다마고치 데스크탑 앱. 29종 공룡 육성, 가챠, 합성 진화, Google Calendar 연동.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #16213e 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 20px 40px;
+    }
+    .logo { font-size: 80px; }
+    h1 { font-size: 36px; color: #fbbf24; margin: 12px 0 8px; }
+    .tagline { font-size: 16px; color: #94a3b8; max-width: 400px; margin: 0 auto 32px; line-height: 1.6; }
+    .cta {
+      display: inline-block;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #fbbf24, #f97316);
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+    .cta:hover { transform: translateY(-2px); }
+
+    /* Features */
+    .features {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .feature {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .feature-icon { font-size: 32px; margin-bottom: 12px; }
+    .feature h3 { font-size: 15px; color: #e2e8f0; margin-bottom: 8px; }
+    .feature p { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+
+    /* Species */
+    .species-section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .species-section h2 { font-size: 22px; color: #fbbf24; margin-bottom: 8px; }
+    .species-section .sub { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+    .rarity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      text-align: left;
+    }
+    .rarity-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .rarity-card h4 { font-size: 13px; margin-bottom: 8px; }
+    .rarity-card p { font-size: 11px; color: #94a3b8; line-height: 1.7; }
+    .rc-common h4 { color: #9ca3af; }
+    .rc-rare h4 { color: #60a5fa; }
+    .rc-epic h4 { color: #c084fc; }
+    .rc-legend h4 { color: #fbbf24; }
+    .rc-hidden h4 { color: #ff6b6b; }
+
+    /* Stats */
+    .stats {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      text-align: center;
+    }
+    .stat-num { font-size: 36px; font-weight: 800; color: #fbbf24; }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 12px;
+      color: #475569;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      max-width: 800px;
+      margin: 40px auto 0;
+    }
+    footer a { color: #60a5fa; text-decoration: none; margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="logo">🦕</div>
+    <h1>DinoTama</h1>
+    <p class="tagline">모니터 구석에 사는 공룡 다마고치.<br>29종 공룡을 모으고, 키우고, 진화시키세요.</p>
+    <a href="https://github.com/funjo-B/dinotama/releases" class="cta">Download for Windows</a>
+    <a href="/guide.html" class="cta" style="background: rgba(255,255,255,0.1); color: #e2e8f0; margin-left: 12px;">사용 가이드</a>
+  </div>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🥚</div>
+      <h3>가챠 시스템</h3>
+      <p>5단계 레어도, 천장제 보장. 1/5/10연 뽑기로 새 공룡을 모으세요. 광고를 보면 무료 뽑기도 가능!</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🧬</div>
+      <h3>합성 진화</h3>
+      <p>같은 종 3마리를 합성하면 다음 단계로 진화. 유년기 → 성장기 → 성체까지 키워보세요.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🍖</div>
+      <h3>감정 & 액션</h3>
+      <p>먹이기, 놀아주기, 쓰다듬기, 재우기. 공룡의 6가지 감정이 실시간으로 변화합니다.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📅</div>
+      <h3>Google Calendar</h3>
+      <p>일정 5분 전 공룡이 알려줍니다. 데스크탑 알림으로 중요한 일정을 놓치지 마세요.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📋</div>
+      <h3>TODO 리스트</h3>
+      <p>할 일을 등록하면 공룡이 랜덤으로 리마인드. 클라우드 동기화로 어디서든 접근.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🌐</div>
+      <h3>다국어 지원</h3>
+      <p>한국어/영어 완벽 지원. 모든 UI, 공룡 이름, 메뉴가 선택한 언어로 표시됩니다.</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div>
+      <div class="stat-num">29</div>
+      <div class="stat-label">공룡 종</div>
+    </div>
+    <div>
+      <div class="stat-num">5</div>
+      <div class="stat-label">레어도 등급</div>
+    </div>
+    <div>
+      <div class="stat-num">3</div>
+      <div class="stat-label">성장 단계</div>
+    </div>
+    <div>
+      <div class="stat-num">6</div>
+      <div class="stat-label">감정 표현</div>
+    </div>
+  </div>
+
+  <!-- Species -->
+  <div class="species-section">
+    <h2>공룡 도감</h2>
+    <p class="sub">Common부터 Hidden까지 — 모두 모을 수 있을까?</p>
+    <div class="rarity-grid">
+      <div class="rarity-card rc-common">
+        <h4>★ Common (50%)</h4>
+        <p>갈리미무스, 코엘로피시스, 레소토사우루스, 미크로랍토르, 콤프소그나투스, 스쿠텔로사우루스, 프시타코사우루스, 드리오사우루스</p>
+      </div>
+      <div class="rarity-card rc-rare">
+        <h4>★★ Rare (30%)</h4>
+        <p>딜로포사우루스, 파키케팔로사우루스, 파라사우롤로푸스, 이구아노돈, 카르노타우루스, 켄트로사우루스, 오비랍토르</p>
+      </div>
+      <div class="rarity-card rc-epic">
+        <h4>★★★ Epic (15%)</h4>
+        <p>벨로키랍토르, 알로사우루스, 스테고사우루스, 안킬로사우루스, 테리지노사우루스</p>
+      </div>
+      <div class="rarity-card rc-legend">
+        <h4>★★★★ Legend (4%)</h4>
+        <p>티라노사우루스, 스피노사우루스, 브라키오사우루스, 트리케라톱스, 투푸수아라</p>
+      </div>
+      <div class="rarity-card rc-hidden">
+        <h4>✦ Hidden (1%)</h4>
+        <p>???</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      <a href="/guide.html">사용 가이드</a>
+      <a href="/privacy.html">개인정보처리방침</a>
+      <a href="/terms.html">이용약관</a>
+      <a href="https://github.com/funjo-B/dinotama">GitHub</a>
+    </p>
+    <p style="margin-top: 12px;">&copy; 2026 DinoTama. MIT License.</p>
+  </footer>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, type Auth } from 'googleapis';
 import { getMainWindow } from './window';
 import { createOAuth2Client, getSavedTokens, updateSavedTokens } from './auth';
 import { CALENDAR_CHECK_INTERVAL_MS, NOTIFICATION_BEFORE_MS } from '../shared/constants/gacha';
@@ -8,10 +8,29 @@ let notifiedEventIds = new Set<string>();
 let authFailCount = 0;
 const MAX_AUTH_RETRIES = 3;
 
-/* ─── Authenticated Client ─── */
+// Token refresh buffer: refresh 5 minutes before actual expiry
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+
+/* ─── Singleton Authenticated Client ─── */
+let cachedClient: Auth.OAuth2Client | null = null;
+
 function getAuthenticatedClient() {
   const tokens = getSavedTokens();
-  if (!tokens) return null;
+  if (!tokens) { cachedClient = null; return null; }
+
+  // Reuse cached client if still valid
+  if (cachedClient) {
+    const creds = cachedClient.credentials;
+    // Update credentials if stored tokens are newer
+    if (creds.access_token !== tokens.access_token) {
+      cachedClient.setCredentials({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expiry_date: tokens.expiry_date,
+      });
+    }
+    return cachedClient;
+  }
 
   const oauth2Client = createOAuth2Client();
   oauth2Client.setCredentials({
@@ -31,11 +50,42 @@ function getAuthenticatedClient() {
     });
   });
 
+  cachedClient = oauth2Client;
   return oauth2Client;
+}
+
+/* ─── Proactive token refresh ─── */
+async function ensureFreshToken() {
+  const tokens = getSavedTokens();
+  if (!tokens?.expiry_date) return;
+
+  const timeUntilExpiry = tokens.expiry_date - Date.now();
+  if (timeUntilExpiry < TOKEN_REFRESH_BUFFER_MS && tokens.refresh_token) {
+    console.log('[Calendar] Token expiring soon, refreshing proactively...');
+    try {
+      const client = getAuthenticatedClient();
+      if (client) {
+        const { credentials } = await client.refreshAccessToken();
+        updateSavedTokens({
+          access_token: credentials.access_token ?? undefined,
+          refresh_token: credentials.refresh_token ?? undefined,
+          expiry_date: credentials.expiry_date ?? undefined,
+        });
+        console.log('[Calendar] Token proactively refreshed');
+      }
+    } catch (err: any) {
+      console.error('[Calendar] Proactive refresh failed:', err.message);
+    }
+  }
+}
+
+export function resetCachedClient() {
+  cachedClient = null;
 }
 
 /* ─── Event Polling ─── */
 async function checkUpcomingEvents() {
+  await ensureFreshToken();
   const auth = getAuthenticatedClient();
   if (!auth) return;
 
@@ -106,6 +156,7 @@ type CalendarEvent = { id: string; title: string; startTime: string; endTime: st
 
 /* ─── Fetch events for a given day offset (0=today, 1=tomorrow, -1=yesterday) ─── */
 export async function fetchEventsForDay(dayOffset = 0): Promise<CalendarEvent[]> {
+  await ensureFreshToken();
   const auth = getAuthenticatedClient();
   if (!auth) return [];
 
@@ -133,9 +184,35 @@ export async function fetchEventsForDay(dayOffset = 0): Promise<CalendarEvent[]>
     }));
   } catch (err: any) {
     if (err.code === 401 || err.code === 403 || err.status === 401 || err.status === 403) {
-      console.error('[Calendar] Auth expired for day fetch');
-      const win = getMainWindow();
-      win?.webContents.send('dino:calendar-auth-expired');
+      console.error('[Calendar] Auth expired for day fetch, attempting refresh...');
+      // Try once more after forcing a token refresh
+      cachedClient = null;
+      try {
+        await ensureFreshToken();
+        const retryAuth = getAuthenticatedClient();
+        if (retryAuth) {
+          const retryCalendar = google.calendar({ version: 'v3', auth: retryAuth });
+          const retryResp = await retryCalendar.events.list({
+            calendarId: 'primary',
+            timeMin: startOfDay.toISOString(),
+            timeMax: endOfDay.toISOString(),
+            singleEvents: true,
+            orderBy: 'startTime',
+          });
+          console.log('[Calendar] Retry succeeded after token refresh');
+          return (retryResp.data.items ?? []).map((event) => ({
+            id: event.id ?? '',
+            title: event.summary ?? '(제목 없음)',
+            startTime: event.start?.dateTime ?? event.start?.date ?? '',
+            endTime: event.end?.dateTime ?? event.end?.date ?? '',
+            location: event.location ?? undefined,
+          }));
+        }
+      } catch (retryErr: any) {
+        console.error('[Calendar] Retry also failed:', retryErr.message);
+        const win = getMainWindow();
+        win?.webContents.send('dino:calendar-auth-expired');
+      }
     } else {
       console.error('[Calendar] Failed to fetch events:', err.message);
     }
@@ -162,4 +239,5 @@ export function stopCalendarPolling() {
     calendarInterval = null;
   }
   notifiedEventIds.clear();
+  cachedClient = null;
 }

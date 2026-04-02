@@ -39,3 +39,8 @@ export const RARITY_ACTION_COUNT: Record<DinoRarity, number> = {
 export const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 export const CALENDAR_CHECK_INTERVAL_MS = 60 * 1000; // 1 minute
 export const NOTIFICATION_BEFORE_MS = 5 * 60 * 1000; // 5 minutes before event
+
+// Ad reward
+export const AD_REWARD_PULLS = 10;
+export const AD_REWARD_MAX_DAILY = 3;
+export const AD_REWARD_URL = 'https://dinotama-dff44.web.app/reward.html';

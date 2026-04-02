@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinoTama - 사용 가이드</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #16213e 100%);
+      color: #cbd5e1;
+      line-height: 1.7;
+      padding: 0 20px 60px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 40px;
+    }
+    .header .logo { font-size: 48px; }
+    .header h1 { font-size: 28px; color: #fbbf24; margin: 8px 0 4px; }
+    .header p { font-size: 13px; color: #94a3b8; }
+    .back { display: inline-block; margin-bottom: 12px; color: #60a5fa; font-size: 13px; text-decoration: none; }
+
+    /* TOC */
+    .toc {
+      max-width: 640px;
+      margin: 0 auto 40px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .toc h3 { font-size: 14px; color: #e2e8f0; margin-bottom: 10px; }
+    .toc a { color: #60a5fa; text-decoration: none; font-size: 13px; display: block; padding: 3px 0; }
+    .toc a:hover { color: #93c5fd; }
+
+    /* Sections */
+    .container { max-width: 640px; margin: 0 auto; }
+
+    .section {
+      margin-bottom: 48px;
+    }
+    .section h2 {
+      font-size: 20px;
+      color: #fbbf24;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(251,191,36,0.2);
+      scroll-margin-top: 20px;
+    }
+    .section h3 {
+      font-size: 15px;
+      color: #e2e8f0;
+      margin: 20px 0 8px;
+    }
+    .section p, .section li {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .section ul { padding-left: 18px; }
+
+    /* Feature card */
+    .feature {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .feature-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .feature-icon { font-size: 20px; flex-shrink: 0; }
+    .feature-title { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+    .feature-trigger {
+      font-size: 10px;
+      color: #94a3b8;
+      background: rgba(255,255,255,0.06);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .feature-desc { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+
+    /* Rarity colors */
+    .r-common { color: #9ca3af; }
+    .r-rare { color: #60a5fa; }
+    .r-epic { color: #c084fc; }
+    .r-legend { color: #fbbf24; }
+    .r-hidden { color: #ff6b6b; }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    th { color: #e2e8f0; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    td { color: #94a3b8; }
+
+    /* Shortcut key */
+    kbd {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-family: inherit;
+      color: #e2e8f0;
+    }
+
+    /* Tip box */
+    .tip {
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #4ade80;
+      margin: 12px 0;
+    }
+
+    .warn {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #fbbf24;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="/" class="back">&larr; DinoTama 홈으로</a>
+    <div class="logo">🦕</div>
+    <h1>DinoTama 사용 가이드</h1>
+    <p>모니터 구석의 공룡 다마고치, 완벽 사용법</p>
+  </div>
+
+  <div class="container">
+
+    <!-- TOC -->
+    <div class="toc">
+      <h3>목차</h3>
+      <a href="#start">1. 시작하기</a>
+      <a href="#dino">2. 공룡 기본 조작</a>
+      <a href="#gacha">3. 가챠 (뽑기)</a>
+      <a href="#collection">4. 컬렉션</a>
+      <a href="#merge">5. 합성 진화</a>
+      <a href="#todo">6. TODO 리스트</a>
+      <a href="#calendar">7. Google Calendar 연동</a>
+      <a href="#adreward">8. 광고 보상</a>
+      <a href="#settings">9. 환경설정</a>
+      <a href="#window">10. 창 관리</a>
+      <a href="#cloud">11. 클라우드 동기화</a>
+      <a href="#rarity">12. 레어도 & 확률표</a>
+    </div>
+
+    <!-- 1. 시작하기 -->
+    <div class="section" id="start">
+      <h2>1. 시작하기</h2>
+      <p>DinoTama를 설치하면 화면 우측 하단에 작은 공룡 창(320x280)이 나타납니다. 이 창은 항상 최상위에 표시되며, 시스템 트레이에 상주합니다.</p>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🔐</span>
+          <span class="feature-title">Google 로그인</span>
+          <span class="feature-trigger">우클릭 메뉴</span>
+        </div>
+        <div class="feature-desc">
+          공룡 창에서 우클릭 → "Google 로그인" 클릭. 브라우저가 열리고 Google 계정으로 로그인하면 앱으로 자동 복귀합니다.
+          로그인하면 클라우드 동기화, Google Calendar 연동, 광고 보상이 활성화됩니다.
+        </div>
+      </div>
+
+      <div class="tip">로그인하면 우측 상단에 이름과 초록색 점이 표시됩니다.</div>
+    </div>
+
+    <!-- 2. 공룡 기본 조작 -->
+    <div class="section" id="dino">
+      <h2>2. 공룡 기본 조작</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">👆</span>
+          <span class="feature-title">공룡 클릭</span>
+          <span class="feature-trigger">좌클릭</span>
+        </div>
+        <div class="feature-desc">공룡을 클릭하면 랜덤한 idle 애니메이션 변형이 재생됩니다. 가만히 둬도 8~20초 간격으로 자동으로 움직입니다.</div>
+      </div>
+
+      <h3>감정 액션 버튼</h3>
+      <p>화면 하단에 감정 액션 버튼이 표시됩니다. 공룡의 레어도에 따라 사용 가능한 버튼 수가 달라집니다.</p>
+
+      <table>
+        <tr><th>버튼</th><th>액션</th><th>감정</th><th>지속시간</th><th>필요 레어도</th></tr>
+        <tr><td>🍖</td><td>먹이기</td><td>happy</td><td>4초</td><td>Common+</td></tr>
+        <tr><td>🎮</td><td>놀아주기</td><td>excited</td><td>5초</td><td>Rare+</td></tr>
+        <tr><td>🤗</td><td>쓰다듬기</td><td>happy</td><td>3초</td><td>Epic+</td></tr>
+        <tr><td>😴</td><td>재우기</td><td>sleepy</td><td>5초</td><td>Legend+</td></tr>
+        <tr><td>💃</td><td>춤추기</td><td>excited</td><td>6초</td><td>Hidden</td></tr>
+      </table>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">✏️</span>
+          <span class="feature-title">이름 변경</span>
+          <span class="feature-trigger">우클릭 메뉴</span>
+        </div>
+        <div class="feature-desc">우클릭 → "이름 변경" 선택. 공룡 위에 입력창이 나타나면 새 이름을 입력하고 Enter. 최대 20자.</div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🔄</span>
+          <span class="feature-title">공룡 선택</span>
+          <span class="feature-trigger">우클릭 메뉴</span>
+        </div>
+        <div class="feature-desc">여러 마리를 보유 중이면 우클릭 → "공룡 선택" 서브메뉴에서 활성 공룡을 변경할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <!-- 3. 가챠 -->
+    <div class="section" id="gacha">
+      <h2>3. 가챠 (뽑기)</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🥚</span>
+          <span class="feature-title">가챠 패널 열기</span>
+          <span class="feature-trigger">좌측 🥚 버튼 또는 우클릭</span>
+        </div>
+        <div class="feature-desc">좌측 사이드바의 🥚 버튼을 클릭하거나, 우클릭 메뉴에서 "가챠"를 선택하면 가챠 패널이 열립니다.</div>
+      </div>
+
+      <h3>뽑기 종류</h3>
+      <table>
+        <tr><th>뽑기</th><th>비용</th><th>설명</th></tr>
+        <tr><td>1회 뽑기</td><td>💰 10</td><td>알 1개 부화 연출</td></tr>
+        <tr><td>5연 뽑기</td><td>💰 50</td><td>알 5개 그리드, 개별 클릭으로 공개</td></tr>
+        <tr><td>10연 뽑기</td><td>💰 100</td><td>알 10개 그리드, 모두열기 가능</td></tr>
+      </table>
+
+      <h3>뽑기 연출</h3>
+      <ul>
+        <li><strong>1회 뽑기:</strong> 알이 흔들리며 클릭하면 부화. Legend/Hidden 등급은 황금빛 번쩍 이펙트 후 공개.</li>
+        <li><strong>다연 뽑기:</strong> 알 그리드가 나타나고, 각 알을 탭하면 개별 부화. "모두 열기" 버튼으로 한번에 공개.</li>
+        <li><strong>Legend/Hidden 연출:</strong> 황금(Legend) 또는 붉은(Hidden) 빛의 특수 이펙트가 2초간 재생된 후 공개됩니다.</li>
+        <li><strong>다연에서 Legend+Hidden 동시 등장 시:</strong> "모두 열기"를 누르면 먼저 나오는(앞번호) 특수 등급 1마리만 플래시 연출 후, 나머지는 즉시 공개됩니다. 개별 클릭 시에는 각각 플래시가 재생됩니다.</li>
+      </ul>
+
+      <h3>천장제 (Pity System)</h3>
+      <p>운이 나쁘더라도 일정 횟수 내에 높은 등급이 보장됩니다:</p>
+      <table>
+        <tr><th>등급</th><th>천장</th><th>의미</th></tr>
+        <tr><td class="r-epic">Epic</td><td>50회</td><td>50회 뽑기 내에 Epic 이상 1회 보장</td></tr>
+        <tr><td class="r-legend">Legend</td><td>100회</td><td>100회 뽑기 내에 Legend 이상 1회 보장</td></tr>
+        <tr><td class="r-hidden">Hidden</td><td>300회</td><td>300회 뽑기 내에 Hidden 1회 보장</td></tr>
+      </table>
+      <p>가챠 패널 하단에 현재 천장 카운터가 표시됩니다.</p>
+    </div>
+
+    <!-- 4. 컬렉션 -->
+    <div class="section" id="collection">
+      <h2>4. 컬렉션</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">📦</span>
+          <span class="feature-title">컬렉션 패널</span>
+          <span class="feature-trigger">좌측 📦 버튼</span>
+        </div>
+        <div class="feature-desc">보유 중인 모든 공룡을 종+스테이지별로 그룹화하여 보여줍니다.</div>
+      </div>
+
+      <h3>기능</h3>
+      <ul>
+        <li><strong>스테이지 필터:</strong> 전체 / 🐣 유년기 / 🦕 성장기 / 🦖 성체 필터링</li>
+        <li><strong>그룹 접기/펼치기:</strong> 종별 그룹 헤더를 클릭하면 개별 공룡 목록이 열립니다.</li>
+        <li><strong>대표 설정:</strong> 공룡을 우클릭 → "대표 설정"으로 메인 화면 공룡 변경</li>
+        <li><strong>이름 변경:</strong> 우클릭 → "이름 변경"</li>
+      </ul>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">💰</span>
+          <span class="feature-title">되팔기</span>
+          <span class="feature-trigger">우클릭 메뉴</span>
+        </div>
+        <div class="feature-desc">
+          공룡을 우클릭 → "되팔기"로 코인을 획득합니다. 마지막 1마리는 판매 불가.
+        </div>
+      </div>
+
+      <h3>되팔기 가격</h3>
+      <table>
+        <tr><th>레어도</th><th>기본가</th><th>유년기(x1)</th><th>성장기(x2)</th><th>성체(x4)</th></tr>
+        <tr><td class="r-common">Common</td><td>3</td><td>3</td><td>6</td><td>12</td></tr>
+        <tr><td class="r-rare">Rare</td><td>5</td><td>5</td><td>10</td><td>20</td></tr>
+        <tr><td class="r-epic">Epic</td><td>10</td><td>10</td><td>20</td><td>40</td></tr>
+        <tr><td class="r-legend">Legend</td><td>50</td><td>50</td><td>100</td><td>200</td></tr>
+        <tr><td class="r-hidden">Hidden</td><td>100</td><td>100</td><td>200</td><td>400</td></tr>
+      </table>
+    </div>
+
+    <!-- 5. 합성 진화 -->
+    <div class="section" id="merge">
+      <h2>5. 합성 진화</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🧬</span>
+          <span class="feature-title">3마리 합성</span>
+          <span class="feature-trigger">컬렉션 패널 ⚡ 버튼</span>
+        </div>
+        <div class="feature-desc">
+          같은 종 + 같은 스테이지의 공룡이 3마리 이상이면 컬렉션 그룹 헤더에 ⚡ 합성 버튼이 나타납니다.
+          클릭하면 3마리 중 2마리가 소모되고, 1마리가 다음 단계로 진화합니다.
+        </div>
+      </div>
+
+      <h3>진화 경로</h3>
+      <p>🐣 유년기(baby) → 🦕 성장기(teen) → 🦖 성체(adult)</p>
+
+      <div class="tip">성체(adult)는 더 이상 합성할 수 없습니다. 성체는 되팔기 가격이 4배!</div>
+
+      <h3>합성 연출</h3>
+      <p>3마리가 모이는 애니메이션 → 번쩍 이펙트 → 진화된 공룡 등장. 화면을 클릭하면 종료.</p>
+    </div>
+
+    <!-- 6. TODO -->
+    <div class="section" id="todo">
+      <h2>6. TODO 리스트</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">📋</span>
+          <span class="feature-title">TODO 패널</span>
+          <span class="feature-trigger">좌측 📋 버튼</span>
+        </div>
+        <div class="feature-desc">할 일을 추가하고 관리하는 패널입니다. 입력창에 텍스트를 적고 + 버튼 또는 Enter로 추가.</div>
+      </div>
+
+      <h3>기능</h3>
+      <ul>
+        <li><strong>체크박스:</strong> 할 일 완료 시 체크. 체크된 항목은 취소선 처리.</li>
+        <li><strong>매일 초기화:</strong> 체크한 항목은 다음 날 자동으로 체크 해제됩니다.</li>
+        <li><strong>개별 알림 토글:</strong> 각 할 일 옆 🔔/🔕 버튼으로 해당 항목의 알림 ON/OFF</li>
+        <li><strong>전체 알림 토글:</strong> 헤더의 🔔 버튼으로 전체 알림 ON/OFF</li>
+        <li><strong>삭제:</strong> 우측 ✕ 버튼으로 항목 영구 삭제</li>
+      </ul>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🦕</span>
+          <span class="feature-title">TODO 알림</span>
+          <span class="feature-trigger">자동</span>
+        </div>
+        <div class="feature-desc">
+          설정된 간격(기본 30분)마다 미완료 할 일 중 하나가 랜덤으로 팝업됩니다.
+          "했어!" 버튼으로 완료 처리, "나중에" 버튼으로 다음 알림까지 무시.
+        </div>
+      </div>
+
+      <div class="warn">알림 간격은 환경설정에서 변경 가능합니다 (끄기 / 15분 / 30분 / 1시간 / 2시간).</div>
+    </div>
+
+    <!-- 7. Calendar -->
+    <div class="section" id="calendar">
+      <h2>7. Google Calendar 연동</h2>
+      <p>Google 로그인 시 자동으로 Google Calendar가 연결됩니다.</p>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">📅</span>
+          <span class="feature-title">일정 보기</span>
+          <span class="feature-trigger">TODO 패널 상단</span>
+        </div>
+        <div class="feature-desc">
+          TODO 패널 상단에 당일 캘린더 일정이 표시됩니다. ‹ / › 화살표로 이전/다음 날 일정도 확인 가능.
+          현재 진행 중인 일정은 초록색으로 "NOW" 표시, 지난 일정은 흐리게 표시됩니다.
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">🔔</span>
+          <span class="feature-title">일정 알림</span>
+          <span class="feature-trigger">자동 (5분 전)</span>
+        </div>
+        <div class="feature-desc">
+          일정 시작 5분 전에 공룡 창 상단에 알림 팝업이 나타납니다.
+          일정 제목, 장소, 남은 시간이 표시되며, "OK" 또는 "5분 후" 버튼으로 응답합니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. 광고 보상 -->
+    <div class="section" id="adreward">
+      <h2>8. 광고 보상</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">📺</span>
+          <span class="feature-title">광고 보고 10연 뽑기</span>
+          <span class="feature-trigger">가챠 패널 하단 버튼</span>
+        </div>
+        <div class="feature-desc">
+          가챠 패널의 뽑기 버튼 아래 "📺 광고 보고 10연뽑기" 버튼을 클릭하면 브라우저가 열립니다.
+          30초간 광고를 시청한 후 "보상 받기" 버튼을 누르면, 앱으로 돌아와 무료 10연 뽑기가 지급됩니다.
+        </div>
+      </div>
+
+      <h3>제한 사항</h3>
+      <ul>
+        <li>1일 최대 <strong>3회</strong>까지 이용 가능</li>
+        <li>Google 로그인 필수</li>
+        <li>보상 토큰은 5분 이내에 사용해야 합니다</li>
+      </ul>
+
+      <div class="tip">코인이 부족할 때 광고 보상으로 무료 뽑기를 받아보세요!</div>
+    </div>
+
+    <!-- 9. 환경설정 -->
+    <div class="section" id="settings">
+      <h2>9. 환경설정</h2>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">⚙️</span>
+          <span class="feature-title">설정 패널</span>
+          <span class="feature-trigger">좌측 ⚙️ 버튼</span>
+        </div>
+        <div class="feature-desc">언어, 알림 간격, 배경 설정을 변경합니다.</div>
+      </div>
+
+      <table>
+        <tr><th>설정</th><th>옵션</th><th>설명</th></tr>
+        <tr><td>언어</td><td>한국어 / English</td><td>전체 UI 언어 변경 (즉시 적용)</td></tr>
+        <tr><td>알림 간격</td><td>끄기 / 15분 / 30분 / 1시간 / 2시간</td><td>TODO 리마인더 주기</td></tr>
+        <tr><td>배경</td><td>🔲 투명 / ⬜ 흰색</td><td>공룡 창 배경 토글</td></tr>
+      </table>
+    </div>
+
+    <!-- 10. 창 관리 -->
+    <div class="section" id="window">
+      <h2>10. 창 관리</h2>
+
+      <h3>드래그 이동</h3>
+      <p>공룡 창의 빈 영역을 마우스로 드래그하면 화면 어디든 이동할 수 있습니다.</p>
+
+      <div class="feature">
+        <div class="feature-header">
+          <span class="feature-icon">📍</span>
+          <span class="feature-title">위치 관리</span>
+          <span class="feature-trigger">우클릭 → 위치</span>
+        </div>
+        <div class="feature-desc">
+          <strong>위치 초기화:</strong> 화면 우측 하단 기본 위치로 복귀<br>
+          <strong>위치 저장:</strong> 현재 위치를 기억<br>
+          <strong>위치 복원:</strong> 저장한 위치로 이동
+        </div>
+      </div>
+
+      <h3>패널 창</h3>
+      <p>TODO, 컬렉션, 가챠, 설정 패널은 공룡 창 왼쪽에 별도 창으로 열립니다. 공룡 창을 드래그하면 패널도 함께 따라옵니다.</p>
+
+      <h3>시스템 트레이</h3>
+      <p>창을 닫아도 앱은 시스템 트레이에서 계속 실행됩니다. 트레이 아이콘을 우클릭하면 로그인/로그아웃, 보이기/종료 등을 선택할 수 있습니다.</p>
+    </div>
+
+    <!-- 11. 클라우드 -->
+    <div class="section" id="cloud">
+      <h2>11. 클라우드 동기화</h2>
+
+      <p>Google 로그인 시 게임 데이터가 자동으로 클라우드에 저장됩니다.</p>
+
+      <h3>동기화 대상</h3>
+      <ul>
+        <li>보유 공룡 목록 및 상태</li>
+        <li>코인 잔액</li>
+        <li>가챠 천장 카운터</li>
+        <li>TODO 리스트</li>
+      </ul>
+
+      <h3>동기화 시점</h3>
+      <table>
+        <tr><th>시점</th><th>동작</th></tr>
+        <tr><td>중요 액션 후 (뽑기, 판매 등)</td><td>2초 후 자동 저장</td></tr>
+        <tr><td>30분 주기</td><td>변경사항 있을 때만 저장</td></tr>
+        <tr><td>로그아웃 직전</td><td>즉시 저장</td></tr>
+        <tr><td>앱 시작 시</td><td>클라우드에서 불러오기</td></tr>
+      </table>
+
+      <div class="tip">TODO 패널 헤더에서 동기화 상태를 확인할 수 있습니다: "☁ 동기화됨" / "⏳ 동기화 중"</div>
+    </div>
+
+    <!-- 12. 레어도 & 확률표 -->
+    <div class="section" id="rarity">
+      <h2>12. 레어도 & 확률표</h2>
+
+      <table>
+        <tr><th>레어도</th><th>확률</th><th>천장</th><th>종 수</th><th>액션 수</th></tr>
+        <tr><td class="r-common">★ Common</td><td>50%</td><td>-</td><td>8종</td><td>1개</td></tr>
+        <tr><td class="r-rare">★★ Rare</td><td>30%</td><td>-</td><td>8종</td><td>2개</td></tr>
+        <tr><td class="r-epic">★★★ Epic</td><td>15%</td><td>50회</td><td>7종</td><td>3개</td></tr>
+        <tr><td class="r-legend">★★★★ Legend</td><td>4%</td><td>100회</td><td>5종</td><td>4개</td></tr>
+        <tr><td class="r-hidden">✦ Hidden</td><td>1%</td><td>300회</td><td>?종</td><td>5개</td></tr>
+      </table>
+
+      <h3>전체 공룡 목록</h3>
+
+      <h3 style="color:#9ca3af;">★ Common (8종)</h3>
+      <p>스테고사우루스, 파라사우롤로푸스, 이구아노돈, 딜로포사우루스, 콤프소그나투스, 디모르포돈, 람포린쿠스, 익티오사우루스</p>
+
+      <h3 style="color:#60a5fa;">★★ Rare (8종)</h3>
+      <p>트리케라톱스, 안킬로사우루스, 파키케팔로사우루스, 알로사우루스, 카르노타우루스, 프테라노돈, 플레시오사우루스, 크로노사우루스</p>
+
+      <h3 style="color:#c084fc;">★★★ Epic (7종)</h3>
+      <p>브라키오사우루스, 스테고케라스, 스피노사우루스, 바리오닉스, 케찰코아틀루스, 모사사우루스, 엘라스모사우루스</p>
+
+      <h3 style="color:#fbbf24;">★★★★ Legend (5종)</h3>
+      <p>아르젠티노사우루스, 티라노사우루스, 기가노토사우루스, 벨로키랍토르, 투푸수아라</p>
+
+      <h3 style="color:#ff6b6b;">✦ Hidden (?종)</h3>
+      <p>??? — 직접 뽑아서 확인하세요!</p>
+    </div>
+
+  </div>
+
+</body>
+</html>

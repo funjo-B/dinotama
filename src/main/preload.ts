@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, clipboard } from 'electron';
 
 const dinoAPI = {
   // Window drag
@@ -35,6 +35,12 @@ const dinoAPI = {
   hasSavedPosition: () => ipcRenderer.invoke('dino:has-saved-position') as Promise<boolean>,
   showContextMenu: (items: { label: string; id: string }[]) =>
     ipcRenderer.invoke('dino:show-context-menu', items) as Promise<string | null>,
+
+  // Ad reward
+  openAdReward: (uid: string) => ipcRenderer.invoke('dino:open-ad-reward', uid),
+  validateAdReward: (token: string) => ipcRenderer.invoke('dino:validate-ad-reward', token) as Promise<{ valid: boolean; pulls?: number; reason?: string }>,
+  readClipboard: () => clipboard.readText(),
+  clearClipboard: () => clipboard.writeText(''),
 
   // Auth (Google login → Firebase + Calendar)
   authLogin: () => ipcRenderer.invoke('dino:auth-login'),

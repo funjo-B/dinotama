@@ -35,19 +35,30 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
 
   const allRevealed = revealed.size === dinos.length;
 
+  const [revealAllPending, setRevealAllPending] = useState(false);
+
   // Auto-reveal after legend flash
   useEffect(() => {
     if (legendFlashing === null) return;
-    const t = setTimeout(() => {
-      setRevealedSet((prev) => new Set([...prev, legendFlashing]));
+    const timer = setTimeout(() => {
+      setRevealedSet((prev) => {
+        const next = new Set([...prev, legendFlashing]);
+        // If revealAll was triggered, reveal all remaining after flash
+        if (revealAllPending) {
+          dinos.forEach((_, i) => next.add(i));
+          setRevealAllPending(false);
+        }
+        return next;
+      });
       setLegendFlashing(null);
     }, 2000);
-    return () => clearTimeout(t);
-  }, [legendFlashing]);
+    return () => clearTimeout(timer);
+  }, [legendFlashing, revealAllPending, dinos]);
 
   const isSpecial = (rarity: DinoRarity) => rarity === 'legend' || rarity === 'hidden';
 
   const revealOne = (i: number) => {
+    if (legendFlashing !== null) return; // Block clicks during flash
     if (isSpecial(dinos[i].rarity)) {
       setLegendFlashing(i);
     } else {
@@ -56,12 +67,19 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
   };
 
   const revealAll = () => {
-    // Flash specials sequentially, reveal others immediately
+    if (legendFlashing !== null) return; // Block during flash
+
     const nonSpecials = dinos.map((_, i) => i).filter((i) => !isSpecial(dinos[i].rarity));
-    setRevealedSet(new Set(nonSpecials));
-    const firstSpecial = dinos.findIndex((d) => isSpecial(d.rarity));
-    if (firstSpecial !== -1) {
-      setLegendFlashing(firstSpecial);
+    const firstUnrevealedSpecial = dinos.findIndex((d, i) => isSpecial(d.rarity) && !revealed.has(i));
+
+    if (firstUnrevealedSpecial !== -1) {
+      // Flash one special, then reveal everything else after it finishes
+      setRevealedSet(new Set([...revealed, ...nonSpecials]));
+      setRevealAllPending(true);
+      setLegendFlashing(firstUnrevealedSpecial);
+    } else {
+      // No specials left — reveal all immediately
+      setRevealedSet(new Set(dinos.map((_, i) => i)));
     }
   };
 
@@ -93,11 +111,15 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
         {t.multi.title(dinos.length)}
       </div>
 
-      {/* Legend flash overlay */}
+      {/* Special flash overlay (Legend=gold, Hidden=red) */}
       <AnimatePresence>
-        {legendFlashing !== null && (
+        {legendFlashing !== null && (() => {
+          const flashDino = dinos[legendFlashing];
+          const flashColor = RARITY_COLORS[flashDino.rarity];
+          const flashLabel = RARITY_LABELS[flashDino.rarity];
+          return (
           <motion.div
-            key="legend-flash"
+            key={`flash-${legendFlashing}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -119,7 +141,7 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'radial-gradient(circle, #fbbf2488 0%, #f97316aa 40%, transparent 70%)',
+                background: `radial-gradient(circle, ${flashColor}88 0%, ${flashColor}aa 40%, transparent 70%)`,
               }}
             />
             <motion.div
@@ -129,7 +151,7 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
                 position: 'absolute',
                 width: 200,
                 height: 200,
-                background: 'conic-gradient(from 0deg, transparent 0deg, #fbbf2444 10deg, transparent 20deg, #fbbf2444 30deg, transparent 40deg, #fbbf2444 50deg, transparent 60deg, #fbbf2444 70deg, transparent 80deg, #fbbf2444 90deg, transparent 100deg, #fbbf2444 110deg, transparent 120deg, #fbbf2444 130deg, transparent 140deg, #fbbf2444 150deg, transparent 160deg, #fbbf2444 170deg, transparent 180deg, #fbbf2444 190deg, transparent 200deg, #fbbf2444 210deg, transparent 220deg, #fbbf2444 230deg, transparent 240deg, #fbbf2444 250deg, transparent 260deg, #fbbf2444 270deg, transparent 280deg, #fbbf2444 290deg, transparent 300deg, #fbbf2444 310deg, transparent 320deg, #fbbf2444 330deg, transparent 340deg, #fbbf2444 350deg, transparent 360deg)',
+                background: `conic-gradient(from 0deg, transparent 0deg, ${flashColor}44 10deg, transparent 20deg, ${flashColor}44 30deg, transparent 40deg, ${flashColor}44 50deg, transparent 60deg, ${flashColor}44 70deg, transparent 80deg, ${flashColor}44 90deg, transparent 100deg, ${flashColor}44 110deg, transparent 120deg, ${flashColor}44 130deg, transparent 140deg, ${flashColor}44 150deg, transparent 160deg, ${flashColor}44 170deg, transparent 180deg, ${flashColor}44 190deg, transparent 200deg, ${flashColor}44 210deg, transparent 220deg, ${flashColor}44 230deg, transparent 240deg, ${flashColor}44 250deg, transparent 260deg, ${flashColor}44 270deg, transparent 280deg, ${flashColor}44 290deg, transparent 300deg, ${flashColor}44 310deg, transparent 320deg, ${flashColor}44 330deg, transparent 340deg, ${flashColor}44 350deg, transparent 360deg)`,
                 borderRadius: '50%',
               }}
             />
@@ -137,11 +159,11 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
               animate={{
                 scale: [1, 1.2, 0.95, 1.25, 1],
                 filter: [
-                  'drop-shadow(0 0 8px #fbbf24)',
-                  'drop-shadow(0 0 40px #fbbf24) drop-shadow(0 0 80px #f97316)',
-                  'drop-shadow(0 0 16px #fbbf24)',
-                  'drop-shadow(0 0 56px #fbbf24) drop-shadow(0 0 100px #f97316)',
-                  'drop-shadow(0 0 24px #fbbf24)',
+                  `drop-shadow(0 0 8px ${flashColor})`,
+                  `drop-shadow(0 0 40px ${flashColor}) drop-shadow(0 0 80px ${flashColor})`,
+                  `drop-shadow(0 0 16px ${flashColor})`,
+                  `drop-shadow(0 0 56px ${flashColor}) drop-shadow(0 0 100px ${flashColor})`,
+                  `drop-shadow(0 0 24px ${flashColor})`,
                 ],
               }}
               transition={{ duration: 2 }}
@@ -156,19 +178,20 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
               }}
               transition={{ duration: 2 }}
               style={{
-                color: '#fbbf24',
+                color: flashColor,
                 fontSize: 18,
                 fontWeight: 900,
                 letterSpacing: 4,
-                textShadow: '0 0 30px #fbbf24, 0 0 60px #f97316',
+                textShadow: `0 0 30px ${flashColor}, 0 0 60px ${flashColor}`,
                 position: 'relative',
                 zIndex: 1,
               }}
             >
-              ★★★★ LEGEND
+              {flashLabel} {flashDino.rarity.toUpperCase()}
             </motion.div>
           </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       {/* Egg grid */}
@@ -224,11 +247,11 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
                     animate={{
                       scale: [1, 1.15, 0.95, 1.2, 1],
                       filter: [
-                        'drop-shadow(0 0 4px #fbbf24)',
-                        'drop-shadow(0 0 16px #fbbf24)',
-                        'drop-shadow(0 0 8px #fbbf24)',
-                        'drop-shadow(0 0 20px #fbbf24)',
-                        'drop-shadow(0 0 10px #fbbf24)',
+                        `drop-shadow(0 0 4px ${color})`,
+                        `drop-shadow(0 0 16px ${color})`,
+                        `drop-shadow(0 0 8px ${color})`,
+                        `drop-shadow(0 0 20px ${color})`,
+                        `drop-shadow(0 0 10px ${color})`,
                       ],
                     }}
                     transition={{ duration: 2, ease: 'easeInOut' }}
@@ -238,9 +261,9 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: 'rgba(251,191,36,0.15)',
+                      background: `${color}25`,
                       borderRadius: 8,
-                      border: '1px solid #fbbf2488',
+                      border: `1px solid ${color}88`,
                       fontSize: 24,
                     }}
                   >
@@ -292,15 +315,16 @@ export function GachaMultiAnimation({ dinos, onComplete }: GachaMultiAnimationPr
         {!allRevealed && (
           <button
             onClick={revealAll}
+            disabled={legendFlashing !== null}
             style={{
               padding: '8px 18px',
               border: 'none',
               borderRadius: 8,
-              background: 'rgba(255,255,255,0.12)',
-              color: '#e2e8f0',
+              background: legendFlashing !== null ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+              color: legendFlashing !== null ? '#475569' : '#e2e8f0',
               fontSize: 12,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: legendFlashing !== null ? 'not-allowed' : 'pointer',
             }}
           >
             {t.multi.revealAll}

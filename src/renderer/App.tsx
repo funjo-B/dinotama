@@ -9,7 +9,7 @@ import { useCalendarNotifications } from './hooks/useCalendarNotifications';
 import { useAuth } from './hooks/useAuth';
 import { useDinoStore } from './stores/dinoStore';
 import type { Dino } from '@shared/types';
-import { SPECIES_DEFS } from '@shared/constants';
+import { SPECIES_DEFS, AD_REWARD_PULLS } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
 import { TodoReminder } from './components/TodoReminder';
 import { GachaAnimation } from './components/GachaAnimation';
@@ -102,7 +102,15 @@ function PanelApp() {
     return <GachaPanel
       isOpen={true}
       onClose={() => window.dinoAPI?.closePanel?.()}
-      onPull={(count) => handleAction('pullGacha', count)}
+      onPull={(count) => {
+        handleAction('pullGacha', count);
+        // Refresh store immediately after pull so coins update fast
+        setTimeout(async () => {
+          const data = await window.dinoAPI?.getStoreSnapshot?.();
+          if (data) useDinoStore.getState().loadFromCloud(data);
+        }, 100);
+      }}
+      userUid={storeData?.uid || null}
     />;
   }
   if (panelType === 'settings') {
@@ -129,11 +137,73 @@ function DinoApp() {
   const { activeDino, dinos, pullGacha, pullGachaMulti, coins, setActiveDino, renameDino, sellDino } = useDinoStore();
   const { currentEvent, handleOk, handleSnooze } = useCalendarNotifications();
 
-  // Expose store snapshot for panel windows
+  // Expose store snapshot for panel windows (include uid for ad reward)
   useEffect(() => {
-    (window as any).__dinoStoreSnapshot = () => useDinoStore.getState().getSnapshot();
+    (window as any).__dinoStoreSnapshot = () => ({
+      ...useDinoStore.getState().getSnapshot(),
+      uid: user?.uid || null,
+    });
     return () => { delete (window as any).__dinoStoreSnapshot; };
+  }, [user]);
+
+  // Process ad reward token
+  const processRewardToken = useCallback(async (token: string) => {
+    try {
+      const result = await window.dinoAPI?.validateAdReward?.(token);
+      if (result?.valid && result.pulls) {
+        const store = useDinoStore.getState();
+        const dinos = store.grantAdReward(result.pulls);
+        store.useAdReward();
+        if (dinos.length > 0) {
+          setGachaMultiResults(dinos);
+          setMultiPullKey((k) => k + 1);
+        }
+        console.log(`[Reward] Granted ${result.pulls} free pulls`);
+      } else {
+        console.warn('[Reward] Validation failed:', result?.reason);
+      }
+    } catch (err) {
+      console.error('[Reward] Error processing reward:', err);
+    }
   }, []);
+
+  // Deep link listener — handle ad reward tokens
+  useEffect(() => {
+    const unsub = window.dinoAPI?.onDeepLink?.((data: { action: string; params: Record<string, string> }) => {
+      if (data.action === 'reward' && data.params.token) {
+        processRewardToken(data.params.token);
+      }
+    });
+    return () => { unsub?.(); };
+  }, [processRewardToken]);
+
+  // Clipboard check — fallback for when deep link doesn't work (dev mode)
+  useEffect(() => {
+    const REWARD_PREFIX = 'DINOTAMA_REWARD:';
+    let processing = false;
+
+    const checkClipboard = async () => {
+      if (processing) return;
+      try {
+        const text = window.dinoAPI?.readClipboard?.();
+        if (text && text.startsWith(REWARD_PREFIX)) {
+          processing = true;
+          const token = text.slice(REWARD_PREFIX.length);
+          window.dinoAPI?.clearClipboard?.();
+          await processRewardToken(token);
+          processing = false;
+        }
+      } catch {}
+    };
+
+    window.addEventListener('focus', checkClipboard);
+    // Also check periodically in case focus event is missed
+    const interval = setInterval(checkClipboard, 3000);
+    return () => {
+      window.removeEventListener('focus', checkClipboard);
+      clearInterval(interval);
+    };
+  }, [processRewardToken]);
 
   // Listen for actions from panel windows
   useEffect(() => {

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinoTama - Free Gacha Reward</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #16213e 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo { font-size: 48px; margin-bottom: 8px; }
+    h1 { font-size: 22px; margin-bottom: 4px; color: #fbbf24; }
+    .subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+
+    /* Ad container */
+    .ad-container {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ad-placeholder {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    /* Timer */
+    .timer-section {
+      margin-bottom: 20px;
+    }
+    .timer {
+      font-size: 48px;
+      font-weight: 800;
+      color: #fbbf24;
+      font-variant-numeric: tabular-nums;
+    }
+    .timer.done { color: #4ade80; }
+    .timer-label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #fbbf24, #f97316);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    /* Claim button */
+    .claim-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .claim-btn.disabled {
+      background: rgba(255,255,255,0.1);
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    .claim-btn.ready {
+      background: linear-gradient(135deg, #fbbf24, #f97316);
+      color: #000;
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.3);
+    }
+    .claim-btn.ready:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(251, 191, 36, 0.4);
+    }
+    .claim-btn.claimed {
+      background: #4ade80;
+      color: #000;
+    }
+
+    .reward-info {
+      margin-top: 16px;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .error-msg {
+      margin-top: 12px;
+      padding: 10px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      color: #ef4444;
+      font-size: 12px;
+      display: none;
+    }
+
+    .fallback-link {
+      display: none;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+    .fallback-link a {
+      color: #60a5fa;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🦕</div>
+    <h1>DinoTama Reward</h1>
+    <p class="subtitle">광고를 시청하고 무료 10연 뽑기를 받으세요!</p>
+
+    <!-- Ad Unit -->
+    <div class="ad-container" id="adContainer">
+      <div class="ad-placeholder" id="adPlaceholder">
+        <!-- AdSense 코드가 여기에 들어갑니다 -->
+        <!-- 아래는 테스트용 placeholder -->
+        <p>📺 광고 영역</p>
+        <p style="margin-top:8px; font-size:11px;">AdSense 승인 후 실제 광고가 표시됩니다</p>
+      </div>
+      <!--
+        실제 AdSense 적용 시:
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-XXXXXXXX"
+          data-ad-slot="XXXXXXXX"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-section">
+      <div class="timer" id="timer">30</div>
+      <div class="timer-label" id="timerLabel">광고를 시청해 주세요</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Claim Button -->
+    <button class="claim-btn disabled" id="claimBtn" disabled>
+      ⏳ 30초 후 보상 받기
+    </button>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="fallback-link" id="fallbackLink">
+      <p>자동으로 앱이 열리지 않으면:</p>
+      <a id="deepLinkAnchor" href="#">여기를 클릭하세요</a>
+    </div>
+
+    <p class="reward-info">
+      🎁 보상: 가챠 10연 무료 뽑기 | 1일 최대 3회
+    </p>
+  </div>
+
+  <script>
+    const TIMER_SECONDS = 30;
+    const API_BASE = 'https://us-central1-dinotama-dff44.cloudfunctions.net';
+
+    // Parse uid from URL
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('uid');
+
+    const timerEl = document.getElementById('timer');
+    const timerLabel = document.getElementById('timerLabel');
+    const progressFill = document.getElementById('progressFill');
+    const claimBtn = document.getElementById('claimBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const fallbackLink = document.getElementById('fallbackLink');
+    const deepLinkAnchor = document.getElementById('deepLinkAnchor');
+
+    if (!uid) {
+      showError('DinoTama 앱에서 접속해 주세요.');
+      claimBtn.textContent = '앱에서 접속 필요';
+    } else {
+      startTimer();
+    }
+
+    function startTimer() {
+      let remaining = TIMER_SECONDS;
+      timerEl.textContent = remaining;
+
+      const interval = setInterval(() => {
+        remaining--;
+        timerEl.textContent = remaining;
+        const progress = ((TIMER_SECONDS - remaining) / TIMER_SECONDS) * 100;
+        progressFill.style.width = progress + '%';
+
+        if (remaining <= 0) {
+          clearInterval(interval);
+          timerEl.textContent = '✓';
+          timerEl.classList.add('done');
+          timerLabel.textContent = '보상을 받을 수 있습니다!';
+          progressFill.style.width = '100%';
+
+          claimBtn.disabled = false;
+          claimBtn.classList.remove('disabled');
+          claimBtn.classList.add('ready');
+          claimBtn.textContent = '🎁 보상 받기 (10연 무료 뽑기)';
+        }
+      }, 1000);
+    }
+
+    claimBtn.addEventListener('click', async () => {
+      if (claimBtn.disabled) return;
+      claimBtn.disabled = true;
+      claimBtn.textContent = '⏳ 처리 중...';
+
+      try {
+        const resp = await fetch(API_BASE + '/claimReward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid }),
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          if (data.error === 'daily_limit') {
+            showError('오늘 보상 횟수를 모두 사용했습니다. (최대 ' + data.max + '회/일)');
+            claimBtn.textContent = '오늘 보상 소진';
+          } else {
+            showError('오류: ' + (data.error || 'unknown'));
+            claimBtn.classList.remove('ready');
+            claimBtn.classList.add('disabled');
+            claimBtn.textContent = '오류 발생';
+          }
+          return;
+        }
+
+        // Success
+        claimBtn.classList.remove('ready');
+        claimBtn.classList.add('claimed');
+
+        // Show remaining
+        if (data.remaining !== undefined) {
+          timerLabel.textContent = '오늘 남은 보상: ' + data.remaining + '회';
+        }
+
+        // Copy token to clipboard for app auto-detection
+        const rewardToken = data.token;
+        const clipText = 'DINOTAMA_REWARD:' + rewardToken;
+        try { await navigator.clipboard.writeText(clipText); } catch {}
+
+        // Try deep link redirect
+        const deepLink = data.deepLink;
+        window.location.href = deepLink;
+
+        // Show fallback immediately
+        claimBtn.textContent = '✅ 보상 전송 완료! DinoTama 앱을 클릭하세요';
+        setTimeout(() => {
+          fallbackLink.style.display = 'block';
+          deepLinkAnchor.href = deepLink;
+          deepLinkAnchor.textContent = '앱이 안 열리면 여기를 클릭';
+        }, 1500);
+
+      } catch (err) {
+        showError('서버 연결 실패: ' + err.message);
+        claimBtn.disabled = false;
+        claimBtn.classList.add('ready');
+        claimBtn.textContent = '🎁 다시 시도';
+      }
+    });
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

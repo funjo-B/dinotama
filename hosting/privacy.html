@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinoTama - 개인정보처리방침</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f19; color: #cbd5e1; line-height: 1.8; padding: 40px 20px; }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 { color: #fbbf24; font-size: 24px; margin-bottom: 8px; }
+    h2 { color: #e2e8f0; font-size: 16px; margin: 24px 0 8px; }
+    p, li { font-size: 13px; margin-bottom: 8px; }
+    ul { padding-left: 20px; }
+    a { color: #60a5fa; }
+    .back { display: inline-block; margin-bottom: 20px; color: #60a5fa; font-size: 13px; text-decoration: none; }
+    .updated { font-size: 11px; color: #64748b; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">&larr; DinoTama 홈으로</a>
+    <h1>개인정보처리방침</h1>
+    <p class="updated">최종 수정일: 2026년 4월 2일</p>
+
+    <h2>1. 수집하는 개인정보</h2>
+    <p>DinoTama는 서비스 제공을 위해 아래 정보를 수집합니다:</p>
+    <ul>
+      <li><strong>Google 계정 정보</strong>: 이름, 이메일 주소 (Google OAuth 로그인 시)</li>
+      <li><strong>게임 데이터</strong>: 보유 공룡, 코인, 가챠 기록, 할일 목록</li>
+      <li><strong>캘린더 데이터</strong>: Google Calendar 일정 제목, 시간 (읽기 전용)</li>
+    </ul>
+
+    <h2>2. 개인정보의 이용 목적</h2>
+    <ul>
+      <li>사용자 인증 및 로그인 유지</li>
+      <li>게임 데이터의 클라우드 동기화 (다중 기기 지원)</li>
+      <li>캘린더 일정 알림 서비스 제공</li>
+      <li>광고 보상 시스템 운영 (일일 보상 횟수 제한)</li>
+    </ul>
+
+    <h2>3. 개인정보의 보관 및 보호</h2>
+    <ul>
+      <li>데이터는 <strong>Firebase Firestore</strong>에 암호화되어 저장됩니다.</li>
+      <li>인증 토큰은 로컬 기기에 암호화 저장됩니다.</li>
+      <li>Google Calendar 데이터는 서버에 저장되지 않으며, 실시간으로만 조회합니다.</li>
+    </ul>
+
+    <h2>4. 제3자 제공</h2>
+    <p>DinoTama는 수집된 개인정보를 제3자에게 판매하거나 공유하지 않습니다. 단, 아래 서비스 제공자를 통해 데이터가 처리됩니다:</p>
+    <ul>
+      <li><strong>Google Firebase</strong>: 인증, 데이터 저장, 호스팅</li>
+      <li><strong>Google AdSense</strong>: 광고 제공 (쿠키 사용 가능)</li>
+      <li><strong>Google Calendar API</strong>: 일정 조회</li>
+    </ul>
+
+    <h2>5. 쿠키 및 광고</h2>
+    <p>광고 보상 페이지에서 Google AdSense를 통해 광고가 표시될 수 있으며, 이 과정에서 쿠키가 사용될 수 있습니다. 쿠키 설정은 브라우저에서 관리할 수 있습니다.</p>
+
+    <h2>6. 사용자 권리</h2>
+    <ul>
+      <li><strong>데이터 삭제</strong>: 앱 내 로그아웃 후 Firebase Console에서 계정 데이터를 삭제할 수 있습니다.</li>
+      <li><strong>동의 철회</strong>: Google 계정 설정에서 DinoTama의 접근 권한을 해제할 수 있습니다.</li>
+    </ul>
+
+    <h2>7. 연락처</h2>
+    <p>개인정보 관련 문의: <a href="https://github.com/funjo-B/dinotama/issues">GitHub Issues</a></p>
+  </div>
+</body>
+</html>

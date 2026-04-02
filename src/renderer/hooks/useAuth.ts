@@ -15,6 +15,7 @@ export function useAuth() {
     // Firebase module references (set after async import)
     let pendingIdToken: string | null = null;
     let firebaseModule: Awaited<typeof import('../services/firebase')> | null = null;
+    let loadedUid: string | null = null; // Prevent duplicate cloud loads
 
     const handleSignIn = async (idToken: string) => {
       if (!idToken) return;
@@ -93,6 +94,13 @@ export function useAuth() {
           setLoading(false);
 
           if (u) {
+            // Skip if already loaded for this user (onAuth fires multiple times)
+            if (loadedUid === u.uid) {
+              console.log('[Auth] onAuth re-fired for same user, skipping cloud load');
+              return;
+            }
+            loadedUid = u.uid;
+
             try {
               const cloudData = await loadUserData(u.uid);
               if (cloudData) {
@@ -122,6 +130,7 @@ export function useAuth() {
               };
             });
           } else {
+            loadedUid = null;
             stopAutoSync();
           }
         });

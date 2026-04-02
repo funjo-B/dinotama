@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { GACHA_RATES, SPECIES_POOL, SPECIES_DEFS, PITY_THRESHOLDS } from '@shared/constants';
+import { GACHA_RATES, SPECIES_POOL, SPECIES_DEFS, PITY_THRESHOLDS, AD_REWARD_MAX_DAILY } from '@shared/constants';
 import type { DinoRarity } from '@shared/types';
 import { useDinoStore } from '../stores/dinoStore';
 import { useT, useSpeciesName } from '../hooks/useT';
@@ -8,6 +8,7 @@ interface GachaPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onPull: (count: number) => void;
+  userUid?: string | null;
 }
 
 const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; stars: string }> = {
@@ -20,10 +21,20 @@ const RARITY_CONFIG: Record<DinoRarity, { label: string; color: string; stars: s
 
 const RARITY_ORDER: DinoRarity[] = ['hidden', 'legend', 'epic', 'rare', 'common'];
 
-export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
+export function GachaPanel({ isOpen, onClose, onPull, userUid }: GachaPanelProps) {
   const t = useT();
   const getSpeciesName = useSpeciesName();
-  const { coins, gacha } = useDinoStore();
+  const { coins, gacha, adRewardUsedToday, lastAdRewardDate } = useDinoStore();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const adUsedToday = lastAdRewardDate === today ? adRewardUsedToday : 0;
+  const adRemaining = AD_REWARD_MAX_DAILY - adUsedToday;
+  const canWatchAd = !!userUid && adRemaining > 0;
+
+  const handleAdReward = useCallback(() => {
+    if (!userUid || !canWatchAd) return;
+    window.dinoAPI?.openAdReward?.(userUid);
+  }, [userUid, canWatchAd]);
 
   if (!isOpen) return null;
 
@@ -126,6 +137,34 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
             {t.gachaPanel.pull10}<br />💰100
           </button>
         </div>
+
+        {/* Ad Reward Button */}
+        <button
+          onClick={handleAdReward}
+          disabled={!canWatchAd}
+          style={{
+            width: '100%',
+            padding: '9px 0',
+            border: '1px dashed',
+            borderColor: canWatchAd ? 'rgba(96, 165, 250, 0.5)' : 'rgba(255,255,255,0.08)',
+            borderRadius: 8,
+            background: canWatchAd
+              ? 'rgba(96, 165, 250, 0.1)'
+              : 'rgba(255,255,255,0.03)',
+            color: canWatchAd ? '#60a5fa' : '#475569',
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: canWatchAd ? 'pointer' : 'not-allowed',
+            marginTop: 6,
+          }}
+        >
+          {!userUid
+            ? t.gachaPanel.adRewardLogin
+            : adRemaining > 0
+              ? `${t.gachaPanel.adReward}  (${t.gachaPanel.adRewardRemaining(adRemaining)})`
+              : t.gachaPanel.adRewardDone
+          }
+        </button>
       </div>
 
       {/* Pity info */}
@@ -176,7 +215,22 @@ export function GachaPanel({ isOpen, onClose, onPull }: GachaPanelProps) {
 
               {/* Species in this rarity */}
               <div style={{ padding: '0 14px 0 28px' }}>
-                {species.map((sid) => {
+                {rarity === 'hidden' ? (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '4px 0',
+                  }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: '#ff6b6b', flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: 11, color: '#cbd5e1', fontStyle: 'italic' }}>
+                      ???
+                    </span>
+                  </div>
+                ) : species.map((sid) => {
                   const def = SPECIES_DEFS[sid];
                   return (
                     <div key={sid} style={{

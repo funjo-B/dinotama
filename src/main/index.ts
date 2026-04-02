@@ -4,6 +4,7 @@ import { createMainWindow, getMainWindow } from './window';
 import { createTray } from './tray';
 import { registerDeepLink, handleSecondInstance } from './deeplink';
 import { setupAuthIPC } from './auth';
+import { setupRewardIPC } from './reward';
 import path from 'path';
 
 // Load .env for main process (Google OAuth keys, etc.)
@@ -37,6 +38,7 @@ if (!gotTheLock) {
     createMainWindow(isDev);
     createTray();
     setupAuthIPC();
+    setupRewardIPC();
 
     if (isDev) {
       console.log('[DinoTama] Dev mode — renderer at http://localhost:5173');

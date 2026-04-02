@@ -38,6 +38,7 @@ const db = getFirestore(app);
 
 let syncInterval: ReturnType<typeof setInterval> | null = null;
 let syncInProgress = false;
+let lastSyncHash = ''; // Track if data actually changed
 
 /* ─── Retry helper ─── */
 async function withRetry<T>(
@@ -109,7 +110,7 @@ export async function loadUserData(uid?: string): Promise<UserData | null> {
   return snapshot.data() as UserData;
 }
 
-/** Start periodic sync (30 min) with duplicate guard */
+/** Start periodic sync (30 min) with duplicate guard + skip-if-unchanged */
 export function startAutoSync(getLatestData: () => UserData) {
   stopAutoSync();
   syncInterval = setInterval(async () => {
@@ -120,7 +121,15 @@ export function startAutoSync(getLatestData: () => UserData) {
     syncInProgress = true;
     try {
       const data = getLatestData();
+      // Skip write if data hasn't changed since last sync
+      const { lastSyncTime, ...rest } = data;
+      const hash = JSON.stringify(rest);
+      if (hash === lastSyncHash) {
+        console.log('[Firebase] Auto-sync skipped — no changes');
+        return;
+      }
       await saveUserData(data);
+      lastSyncHash = hash;
       console.log('[Firebase] Auto-sync complete');
     } catch (err) {
       console.error('[Firebase] Auto-sync failed after retries:', err);
@@ -141,6 +150,8 @@ export function stopAutoSync() {
 /** Immediate sync (on important events) */
 export async function syncNow(userData: UserData): Promise<void> {
   await saveUserData(userData);
+  const { lastSyncTime, ...rest } = userData;
+  lastSyncHash = JSON.stringify(rest);
 }
 
 /** Save todos to Firestore (with retry) */

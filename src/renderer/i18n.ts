@@ -56,6 +56,10 @@ export const translations = {
       legendPity: (n: number, max: number) => `Legend 천장: ${n}/${max}`,
       hiddenPity: (n: number, max: number) => `Hidden 천장: ${n}/${max}`,
       totalPulls: (n: number) => `총 ${n}회 뽑기 완료`,
+      adReward: '📺 광고 보고 10연뽑기',
+      adRewardRemaining: (n: number) => `오늘 ${n}회 남음`,
+      adRewardDone: '오늘 보상 소진',
+      adRewardLogin: '로그인 후 이용 가능',
     },
 
     // CollectionPanel
@@ -180,6 +184,10 @@ export const translations = {
       legendPity: (n: number, max: number) => `Legend Pity: ${n}/${max}`,
       hiddenPity: (n: number, max: number) => `Hidden Pity: ${n}/${max}`,
       totalPulls: (n: number) => `Total: ${n} pulls`,
+      adReward: '📺 Watch Ad for 10 Free Pulls',
+      adRewardRemaining: (n: number) => `${n} left today`,
+      adRewardDone: 'Daily rewards used up',
+      adRewardLogin: 'Login required',
     },
 
     collection: {

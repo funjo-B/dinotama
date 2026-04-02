@@ -4,7 +4,10 @@ import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MUL
 
 // Debounced cloud sync — saves after important actions
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+let pendingSyncCount = 0; // Track if there are unsaved local changes
+
 function scheduleSync() {
+  pendingSyncCount++;
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
     try {
@@ -19,10 +22,16 @@ function scheduleSync() {
         ...snap,
         lastSyncTime: Date.now(),
       });
+      pendingSyncCount = 0;
     } catch (err) {
       console.warn('[Sync] Auto-save failed:', err);
     }
   }, 2000);
+}
+
+/** Check if there are local changes not yet synced to cloud */
+export function hasPendingSync(): boolean {
+  return pendingSyncCount > 0;
 }
 
 const DEFAULT_STATS: DinoStats = { hunger: 80, happiness: 80, fatigue: 0 };
@@ -53,6 +62,11 @@ interface DinoStore {
   loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
   getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold: number };
   resetState: () => void;
+  // Ad reward
+  grantAdReward: (count: number) => Dino[];
+  adRewardUsedToday: number;
+  lastAdRewardDate: string;
+  useAdReward: () => void;
   // 테스트용
   clearAllDinos: () => void;
   generateAllSpecies: () => void;
@@ -132,6 +146,8 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   premiumCurrency: 0,
   gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0, pullsSinceHidden: 0 },
   totalSold: 0,
+  adRewardUsedToday: 0,
+  lastAdRewardDate: '',
 
   // Local-only
   activeStats: { ...DEFAULT_STATS },
@@ -296,6 +312,12 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   },
 
   loadFromCloud: (data) => {
+    // Protect against overwriting unsaved local changes
+    if (pendingSyncCount > 0) {
+      console.warn('[DinoStore] Skipping cloud load — local changes pending sync');
+      return;
+    }
+
     const migratedDinos = data.dinos.map(migrateDino);
     const activeDino = data.activeDinoId
       ? migratedDinos.find((d) => d.id === data.activeDinoId) ?? null
@@ -311,6 +333,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
     });
+    pendingSyncCount = 0; // Cloud data is now the source of truth
     console.log(`[DinoStore] Loaded from cloud: ${migratedDinos.length} dinos, ${data.coins} coins`);
   },
 
@@ -338,6 +361,41 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
     });
+  },
+
+  // ── 광고 보상 ─────────────────────────────────────────────────────────────
+  grantAdReward: (count: number) => {
+    const state = get();
+    const results: Dino[] = [];
+    let gacha = { ...state.gacha };
+
+    for (let i = 0; i < count; i++) {
+      const rarity = rollRarity(gacha);
+      const dino = createDino(rarity);
+      results.push(dino);
+      gacha = {
+        totalPulls: gacha.totalPulls + 1,
+        pullsSinceEpic: rarity === 'epic' || rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceEpic + 1,
+        pullsSinceLegend: rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceLegend + 1,
+        pullsSinceHidden: rarity === 'hidden' ? 0 : (gacha.pullsSinceHidden ?? 0) + 1,
+      };
+    }
+
+    set({
+      dinos: [...state.dinos, ...results],
+      gacha,
+      // Coins not deducted — free reward
+    });
+
+    scheduleSync();
+    return results;
+  },
+
+  useAdReward: () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const state = get();
+    const count = state.lastAdRewardDate === today ? state.adRewardUsedToday : 0;
+    set({ adRewardUsedToday: count + 1, lastAdRewardDate: today });
   },
 
   // ── 테스트 전용 ────────────────────────────────────────────────────────────
