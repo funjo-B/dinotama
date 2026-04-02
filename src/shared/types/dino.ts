@@ -5,17 +5,21 @@ export type DinoEmotion = 'idle' | 'idle1' | 'idle2' | 'idle3' | 'happy' | 'sad'
 export type DinoRarity = 'common' | 'rare' | 'epic' | 'legend' | 'hidden';
 
 export type DinoSpeciesId =
-  // COMMON (8)
+  // COMMON (11)
+  | 'gallimimus' | 'coelophysis' | 'lesothosaurus'
   | 'stegosaurus' | 'parasaurolophus' | 'iguanodon' | 'dilophosaurus'
   | 'compsognathus' | 'dimorphodon' | 'rhamphorhynchus' | 'ichthyosaurus'
-  // RARE (8)
+  // RARE (11)
   | 'triceratops' | 'ankylosaurus' | 'pachycephalosaurus' | 'allosaurus'
   | 'carnotaurus' | 'pteranodon' | 'plesiosaurus' | 'kronosaurus'
-  // EPIC (7)
+  | 'dryosaurus' | 'scutellosaurus' | 'psittacosaurus'
+  // EPIC (10)
   | 'brachiosaurus' | 'stegoceras' | 'spinosaurus' | 'baryonyx'
   | 'quetzalcoatlus' | 'mosasaurus' | 'elasmosaurus'
-  // LEGEND (5)
+  | 'kentrosaurus' | 'microraptor' | 'oviraptor'
+  // LEGEND (6)
   | 'argentinosaurus' | 'tyrannosaurus' | 'giganotosaurus' | 'velociraptor' | 'tupuxuara'
+  | 'therizinosaurus'
   // HIDDEN (3)
   | 'chicken' | 'carp' | 'lizard';
 

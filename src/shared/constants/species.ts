@@ -4,6 +4,7 @@ import type { DinoRarity, DinoSpeciesId, DinoSpeciesDef, DinoStage } from '../ty
 export const REAL_SPRITE_SPECIES = new Set<DinoSpeciesId>([
   'tyrannosaurus',
   'tupuxuara',
+  'gallimimus',
 ]);
 
 // 멀티프레임 스프라이트 정보 — `종_이모션` 키로 프레임 수 지정 (기본 1)
@@ -28,15 +29,18 @@ export const STAGE_SELL_MULTIPLIER: Record<string, number> = {
 };
 
 export const SPECIES_POOL: Record<DinoRarity, DinoSpeciesId[]> = {
-  common:  ['stegosaurus', 'parasaurolophus', 'iguanodon', 'dilophosaurus', 'compsognathus', 'dimorphodon', 'rhamphorhynchus', 'ichthyosaurus'],
-  rare:    ['triceratops', 'ankylosaurus', 'pachycephalosaurus', 'allosaurus', 'carnotaurus', 'pteranodon', 'plesiosaurus', 'kronosaurus'],
-  epic:    ['brachiosaurus', 'stegoceras', 'spinosaurus', 'baryonyx', 'quetzalcoatlus', 'mosasaurus', 'elasmosaurus'],
-  legend:  ['argentinosaurus', 'tyrannosaurus', 'giganotosaurus', 'velociraptor', 'tupuxuara'],
+  common:  ['gallimimus', 'coelophysis', 'lesothosaurus', 'stegosaurus', 'parasaurolophus', 'iguanodon', 'dilophosaurus', 'compsognathus', 'dimorphodon', 'rhamphorhynchus', 'ichthyosaurus'],
+  rare:    ['triceratops', 'ankylosaurus', 'pachycephalosaurus', 'allosaurus', 'carnotaurus', 'pteranodon', 'plesiosaurus', 'kronosaurus', 'dryosaurus', 'scutellosaurus', 'psittacosaurus'],
+  epic:    ['brachiosaurus', 'stegoceras', 'spinosaurus', 'baryonyx', 'quetzalcoatlus', 'mosasaurus', 'elasmosaurus', 'kentrosaurus', 'microraptor', 'oviraptor'],
+  legend:  ['argentinosaurus', 'tyrannosaurus', 'giganotosaurus', 'velociraptor', 'tupuxuara', 'therizinosaurus'],
   hidden:  ['chicken', 'carp', 'lizard'],
 };
 
 export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
-  // ── COMMON (8) ──────────────────────────────────────────────────────────────
+  // ── COMMON (11) ─────────────────────────────────────────────────────────────
+  gallimimus:         { id: 'gallimimus',         nameKo: '갈리미무스',         nameEn: 'Gallimimus',         rarity: 'common', baseColor: '#facc15', diet: 'herbivore' },
+  coelophysis:        { id: 'coelophysis',        nameKo: '코엘로피시스',       nameEn: 'Coelophysis',        rarity: 'common', baseColor: '#84cc16', diet: 'carnivore' },
+  lesothosaurus:      { id: 'lesothosaurus',      nameKo: '레소토사우루스',     nameEn: 'Lesothosaurus',      rarity: 'common', baseColor: '#34d399', diet: 'herbivore' },
   stegosaurus:        { id: 'stegosaurus',        nameKo: '스테고사우루스',     nameEn: 'Stegosaurus',        rarity: 'common', baseColor: '#4ade80', diet: 'herbivore' },
   parasaurolophus:    { id: 'parasaurolophus',    nameKo: '파라사우롤로푸스',   nameEn: 'Parasaurolophus',    rarity: 'common', baseColor: '#86efac', diet: 'herbivore' },
   iguanodon:          { id: 'iguanodon',          nameKo: '이구아노돈',         nameEn: 'Iguanodon',          rarity: 'common', baseColor: '#a3e635', diet: 'herbivore' },
@@ -46,7 +50,7 @@ export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
   rhamphorhynchus:    { id: 'rhamphorhynchus',    nameKo: '람포린쿠스',         nameEn: 'Rhamphorhynchus',    rarity: 'common', baseColor: '#93c5fd', diet: 'flyer'     },
   ichthyosaurus:      { id: 'ichthyosaurus',      nameKo: '익티오사우루스',     nameEn: 'Ichthyosaurus',      rarity: 'common', baseColor: '#60a5fa', diet: 'aquatic'   },
 
-  // ── RARE (8) ────────────────────────────────────────────────────────────────
+  // ── RARE (11) ───────────────────────────────────────────────────────────────
   triceratops:        { id: 'triceratops',        nameKo: '트리케라톱스',       nameEn: 'Triceratops',        rarity: 'rare',   baseColor: '#f97316', diet: 'herbivore' },
   ankylosaurus:       { id: 'ankylosaurus',       nameKo: '안킬로사우루스',     nameEn: 'Ankylosaurus',       rarity: 'rare',   baseColor: '#94a3b8', diet: 'herbivore' },
   pachycephalosaurus: { id: 'pachycephalosaurus', nameKo: '파키케팔로사우루스', nameEn: 'Pachycephalosaurus', rarity: 'rare',   baseColor: '#6366f1', diet: 'herbivore' },
@@ -55,8 +59,11 @@ export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
   pteranodon:         { id: 'pteranodon',         nameKo: '프테라노돈',         nameEn: 'Pteranodon',         rarity: 'rare',   baseColor: '#06b6d4', diet: 'flyer'     },
   plesiosaurus:       { id: 'plesiosaurus',       nameKo: '플레시오사우루스',   nameEn: 'Plesiosaurus',       rarity: 'rare',   baseColor: '#2dd4bf', diet: 'aquatic'   },
   kronosaurus:        { id: 'kronosaurus',        nameKo: '크로노사우루스',     nameEn: 'Kronosaurus',        rarity: 'rare',   baseColor: '#0ea5e9', diet: 'aquatic'   },
+  dryosaurus:         { id: 'dryosaurus',         nameKo: '드라이오사우루스',   nameEn: 'Dryosaurus',         rarity: 'rare',   baseColor: '#a3e635', diet: 'herbivore' },
+  scutellosaurus:     { id: 'scutellosaurus',     nameKo: '스쿠텔로사우루스',   nameEn: 'Scutellosaurus',     rarity: 'rare',   baseColor: '#78716c', diet: 'herbivore' },
+  psittacosaurus:     { id: 'psittacosaurus',     nameKo: '프시타코사우루스',   nameEn: 'Psittacosaurus',     rarity: 'rare',   baseColor: '#f472b6', diet: 'herbivore' },
 
-  // ── EPIC (7) ────────────────────────────────────────────────────────────────
+  // ── EPIC (10) ────────────────────────────────────────────────────────────────
   brachiosaurus:      { id: 'brachiosaurus',      nameKo: '브라키오사우루스',   nameEn: 'Brachiosaurus',      rarity: 'epic',   baseColor: '#c084fc', diet: 'herbivore' },
   stegoceras:         { id: 'stegoceras',         nameKo: '스테고케라스',       nameEn: 'Stegoceras',         rarity: 'epic',   baseColor: '#d8b4fe', diet: 'herbivore' },
   spinosaurus:        { id: 'spinosaurus',        nameKo: '스피노사우루스',     nameEn: 'Spinosaurus',        rarity: 'epic',   baseColor: '#f472b6', diet: 'carnivore' },
@@ -64,13 +71,17 @@ export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
   quetzalcoatlus:     { id: 'quetzalcoatlus',     nameKo: '케찰코아틀루스',     nameEn: 'Quetzalcoatlus',     rarity: 'epic',   baseColor: '#818cf8', diet: 'flyer'     },
   mosasaurus:         { id: 'mosasaurus',         nameKo: '모사사우루스',       nameEn: 'Mosasaurus',         rarity: 'epic',   baseColor: '#a78bfa', diet: 'aquatic'   },
   elasmosaurus:       { id: 'elasmosaurus',       nameKo: '엘라스모사우루스',   nameEn: 'Elasmosaurus',       rarity: 'epic',   baseColor: '#f9a8d4', diet: 'aquatic'   },
+  kentrosaurus:       { id: 'kentrosaurus',       nameKo: '켄트로사우루스',     nameEn: 'Kentrosaurus',       rarity: 'epic',   baseColor: '#a78bfa', diet: 'herbivore' },
+  microraptor:        { id: 'microraptor',        nameKo: '미크로랍토르',       nameEn: 'Microraptor',        rarity: 'epic',   baseColor: '#6366f1', diet: 'carnivore' },
+  oviraptor:          { id: 'oviraptor',          nameKo: '오비랍토르',         nameEn: 'Oviraptor',          rarity: 'epic',   baseColor: '#f97316', diet: 'carnivore' },
 
-  // ── LEGEND (5) ──────────────────────────────────────────────────────────────
+  // ── LEGEND (6) ──────────────────────────────────────────────────────────────
   argentinosaurus:    { id: 'argentinosaurus',    nameKo: '아르젠티노사우루스', nameEn: 'Argentinosaurus',    rarity: 'legend', baseColor: '#fbbf24', diet: 'herbivore' },
   tyrannosaurus:      { id: 'tyrannosaurus',      nameKo: '티라노사우루스',     nameEn: 'Tyrannosaurus',      rarity: 'legend', baseColor: '#ef4444', diet: 'carnivore' },
   giganotosaurus:     { id: 'giganotosaurus',     nameKo: '기가노토사우루스',   nameEn: 'Giganotosaurus',     rarity: 'legend', baseColor: '#dc2626', diet: 'carnivore' },
   velociraptor:       { id: 'velociraptor',       nameKo: '벨로키랍토르',       nameEn: 'Velociraptor',       rarity: 'legend', baseColor: '#fb923c', diet: 'carnivore' },
   tupuxuara:          { id: 'tupuxuara',          nameKo: '투푸수아라',         nameEn: 'Tupuxuara',          rarity: 'legend', baseColor: '#f59e0b', diet: 'flyer'     },
+  therizinosaurus:    { id: 'therizinosaurus',    nameKo: '테리지노사우루스',   nameEn: 'Therizinosaurus',    rarity: 'legend', baseColor: '#a855f7', diet: 'herbivore' },
 
   // ── HIDDEN (3) ──────────────────────────────────────────────────────────────
   chicken:            { id: 'chicken',            nameKo: '닭',                 nameEn: 'Chicken',            rarity: 'hidden', baseColor: '#ff6b6b', diet: 'special'   },

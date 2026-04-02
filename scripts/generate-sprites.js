@@ -1367,6 +1367,9 @@ function drawWesternDragon(ctx, c, dc) {
 // Extend SPECIES with all 29 new species (reusing existing draw shapes where suitable)
 Object.assign(SPECIES, {
   // ── COMMON extras ──────────────────────────────────────────────────────────
+  gallimimus:         { color: '#facc15', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  coelophysis:        { color: '#84cc16', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  lesothosaurus:      { color: '#34d399', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
   iguanodon:          { color: '#a3e635', eyeOffset: { x: 22, y: -8  }, draw: SPECIES.stegosaurus.draw    },
   compsognathus:      { color: '#67e8f9', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
   dimorphodon:        { color: '#7dd3fc', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
@@ -1380,6 +1383,9 @@ Object.assign(SPECIES, {
   pteranodon:         { color: '#06b6d4', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
   plesiosaurus:       { color: '#2dd4bf', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
   kronosaurus:        { color: '#0ea5e9', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+  dryosaurus:         { color: '#a3e635', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  scutellosaurus:     { color: '#78716c', eyeOffset: { x: 22, y: -8  }, draw: SPECIES.stegosaurus.draw    },
+  psittacosaurus:     { color: '#f472b6', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.triceratops.draw    },
 
   // ── EPIC extras ────────────────────────────────────────────────────────────
   stegoceras:         { color: '#d8b4fe', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
@@ -1387,6 +1393,9 @@ Object.assign(SPECIES, {
   quetzalcoatlus:     { color: '#818cf8', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
   mosasaurus:         { color: '#a78bfa', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
   elasmosaurus:       { color: '#f9a8d4', eyeOffset: { x: 24, y: 3   }, draw(ctx, c, dc) { drawAquatic(ctx, c, dc); } },
+  kentrosaurus:       { color: '#a78bfa', eyeOffset: { x: 22, y: -8  }, draw: SPECIES.stegosaurus.draw    },
+  microraptor:        { color: '#6366f1', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
+  oviraptor:          { color: '#f97316', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
 
   // ── LEGEND extras ──────────────────────────────────────────────────────────
   argentinosaurus:    { color: '#fbbf24', eyeOffset: { x: 14, y: -48 }, draw: SPECIES.brachiosaurus.draw  },
@@ -1394,6 +1403,7 @@ Object.assign(SPECIES, {
   giganotosaurus:     { color: '#dc2626', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
   velociraptor:       { color: '#fb923c', eyeOffset: { x: 22, y: -18 }, draw: SPECIES.raptor.draw         },
   tupuxuara:          { color: '#f59e0b', eyeOffset: { x: 14, y: -18 }, draw: SPECIES.pterodactyl.draw    },
+  therizinosaurus:    { color: '#a855f7', eyeOffset: { x: 20, y: -22 }, draw: SPECIES.trex.draw           },
 
   // ── HIDDEN ─────────────────────────────────────────────────────────────────
   chicken:            { color: '#ff6b6b', eyeOffset: { x: 14, y: -10 }, draw(ctx, c, dc) { drawChicken(ctx, c, dc); } },

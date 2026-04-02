@@ -98,7 +98,7 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 - 웹 호스팅 변경 시 `hosting/` 폴더 커밋 포함
 
 ## Species System
-- 31종: 5레어도 (Common 8종 / Rare 8종 / Epic 7종 / Legend 5종 / Hidden 3종)
+- 41종: 5레어도 (Common 11종 / Rare 11종 / Epic 10종 / Legend 6종 / Hidden 3종)
 - 스프라이트 경로: `public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_{frame}.png`
 - Hidden 종은 가챠 패널에서 "???" 으로 표시 (비공개)
 - Hidden 변신 시스템: baby/teen은 평범한 동물 → adult에서 전설 존재로 변신

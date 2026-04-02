@@ -1,0 +1,342 @@
+{
+    "common": "Flat vector icon style, thick bold uniform black outline, geometric simple shapes, dot eyes (two tiny black dots), kawaii proportions, large head small body ratio, chubby rounded limbs, exaggerated characteristic features in cute style, adorable but recognizable dinosaur species, no blush, no shine, no sparkle, no cheek marks, hard edges, straight lines, limited 3 color palette, solid WHITE background, game sprite icon style, 76x76 pixel proportion, flat color fills only, no shading, no gradient, no shadow, no texture, 2D minimalist pictogram, isolated character only, suitable for background removal",
+    "items": [
+      {
+        "prompt": "Gallimimus baby, tiny ostrich-like dinosaur, very large round head, stubby toothless beak, short fluffy body, oversized eyes replaced by two dot eyes, no feathers detail",
+        "filename": "gallimimus_baby.png"
+      },
+      {
+        "prompt": "Gallimimus juvenile, growing ostrich-like dinosaur, long neck starting to show, toothless beak, longer legs, slim bipedal body",
+        "filename": "gallimimus_teen.png"
+      },
+      {
+        "prompt": "Gallimimus adult, tall ostrich-like dinosaur, long slender neck, small toothless beak head, long powerful legs, slim upright body",
+        "filename": "gallimimus_adult.png"
+      },
+  
+      {
+        "prompt": "Coelophysis baby, tiny slender early dinosaur, very large round head, narrow pointed snout with small teeth, short body, thin tail",
+        "filename": "coelophysis_baby.png"
+      },
+      {
+        "prompt": "Coelophysis juvenile, small lightly built dinosaur, narrow long snout, sharp small teeth visible, slender bipedal body, long thin tail",
+        "filename": "coelophysis_teen.png"
+      },
+      {
+        "prompt": "Coelophysis adult, slender bipedal predator, long narrow snout, sharp teeth, graceful thin body, long counterbalancing tail",
+        "filename": "coelophysis_adult.png"
+      },
+  
+      {
+        "prompt": "Lesothosaurus baby, tiny round bipedal dinosaur, oversized round head, small pointed beak, chubby stubby body, short tail",
+        "filename": "lesothosaurus_baby.png"
+      },
+      {
+        "prompt": "Lesothosaurus juvenile, small bipedal ornithischian, round head, short pointed beak, slim body, medium tail",
+        "filename": "lesothosaurus_teen.png"
+      },
+      {
+        "prompt": "Lesothosaurus adult, small agile bipedal dinosaur, round head, short beak, slender upright body, long balancing tail",
+        "filename": "lesothosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Microraptor baby, tiny four-winged dinosaur, huge round head, small curved beak, four tiny stubby wing-arms, short feathered tail fan",
+        "filename": "microraptor_baby.png"
+      },
+      {
+        "prompt": "Microraptor juvenile, small four-winged dinosaur, narrow snout with small teeth, four visible wing limbs, long feathered tail",
+        "filename": "microraptor_teen.png"
+      },
+      {
+        "prompt": "Microraptor adult, crow-sized four-winged dinosaur, sharp narrow snout, four feathered wing limbs clearly shown, long ribbon tail feathers",
+        "filename": "microraptor_adult.png"
+      },
+  
+      {
+        "prompt": "Compsognathus baby, extremely tiny dinosaur, very large round head compared to body, narrow pointed snout, two tiny arms, long thin tail",
+        "filename": "compsognathus_baby.png"
+      },
+      {
+        "prompt": "Compsognathus juvenile, small chicken-sized dinosaur, narrow pointed snout, tiny two-fingered arms, slender body, long whip tail",
+        "filename": "compsognathus_teen.png"
+      },
+      {
+        "prompt": "Compsognathus adult, small agile theropod, narrow pointed snout, tiny two-fingered arms, slim bipedal body, very long thin tail",
+        "filename": "compsognathus_adult.png"
+      },
+  
+      {
+        "prompt": "Scutellosaurus baby, tiny dinosaur with small scutes on back, big round head, short beak, chubby round body with bumpy back texture shown as geometric shapes",
+        "filename": "scutellosaurus_baby.png"
+      },
+      {
+        "prompt": "Scutellosaurus juvenile, small armored dinosaur, rows of small bony scutes along back shown as simple geometric dots, short beak, medium tail",
+        "filename": "scutellosaurus_teen.png"
+      },
+      {
+        "prompt": "Scutellosaurus adult, small bipedal dinosaur, rows of small round scutes covering back shown as simple pattern, short beak, long tail",
+        "filename": "scutellosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Psittacosaurus baby, tiny parrot-faced dinosaur, huge round head, very large deep curved parrot-like beak, chubby body, short tail",
+        "filename": "psittacosaurus_baby.png"
+      },
+      {
+        "prompt": "Psittacosaurus juvenile, small ceratopsian, prominent deep curved parrot beak, round head with small cheek horns, bipedal body, medium tail",
+        "filename": "psittacosaurus_teen.png"
+      },
+      {
+        "prompt": "Psittacosaurus adult, bipedal ceratopsian, distinctive deep curved parrot-like beak, prominent cheek horns, sturdy body, bristled tail shown as simple spikes",
+        "filename": "psittacosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Dryosaurus baby, tiny bipedal dinosaur, large round head, small hard beak, big eyes replaced by dot eyes, chubby round body, short thick tail",
+        "filename": "dryosaurus_baby.png"
+      },
+      {
+        "prompt": "Dryosaurus juvenile, small agile ornithopod, round head with hard beak, slender bipedal body, long balancing tail",
+        "filename": "dryosaurus_teen.png"
+      },
+      {
+        "prompt": "Dryosaurus adult, agile bipedal herbivore, round head with hard beak, long slender legs, slim upright body, long stiff tail",
+        "filename": "dryosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Dilophosaurus baby, tiny crested theropod, huge round head, two tiny parallel crests on top of head shown as simple ridges, narrow snout, chubby body",
+        "filename": "dilophosaurus_baby.png"
+      },
+      {
+        "prompt": "Dilophosaurus juvenile, medium crested theropod, two parallel bony crests on head clearly visible, narrow snout, slender bipedal body",
+        "filename": "dilophosaurus_teen.png"
+      },
+      {
+        "prompt": "Dilophosaurus adult, large crested theropod, two prominent parallel bony crests running along top of head, narrow snout with notch, slender powerful body",
+        "filename": "dilophosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Pachycephalosaurus baby, tiny dome-headed dinosaur, enormous round dome on top of head, small face below dome, chubby body, short tail",
+        "filename": "pachycephalosaurus_baby.png"
+      },
+      {
+        "prompt": "Pachycephalosaurus juvenile, small dome-headed dinosaur, thick rounded dome on head with small spikes around edge, bipedal body, medium tail",
+        "filename": "pachycephalosaurus_teen.png"
+      },
+      {
+        "prompt": "Pachycephalosaurus adult, bipedal dinosaur with massive thick domed skull, small spiky bumps around dome edge, sturdy compact body, thick tail",
+        "filename": "pachycephalosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Parasaurolophus baby, tiny hadrosaur, large round head with tiny backward tube crest stub on top, duck-like flat beak, chubby body",
+        "filename": "parasaurolophus_baby.png"
+      },
+      {
+        "prompt": "Parasaurolophus juvenile, medium hadrosaur, growing backward-sweeping tube crest on head, wide flat duck bill, bipedal stance, medium body",
+        "filename": "parasaurolophus_teen.png"
+      },
+      {
+        "prompt": "Parasaurolophus adult, large hadrosaur, long distinctive backward-sweeping hollow tube crest extending from head, wide flat duck bill, large sturdy body",
+        "filename": "parasaurolophus_adult.png"
+      },
+  
+      {
+        "prompt": "Iguanodon baby, tiny bipedal dinosaur, big round head, small hard beak, tiny thumb spike on hand shown as small spike, chubby round body",
+        "filename": "iguanodon_baby.png"
+      },
+      {
+        "prompt": "Iguanodon juvenile, medium ornithopod, hard beak, visible thumb spike on hand, growing larger body, can walk on two or four legs",
+        "filename": "iguanodon_teen.png"
+      },
+      {
+        "prompt": "Iguanodon adult, large ornithopod, hard beak, prominent conical thumb spike on hand clearly shown, large bulky body, sturdy four limbs",
+        "filename": "iguanodon_adult.png"
+      },
+  
+      {
+        "prompt": "Carnotaurus baby, tiny horned theropod, enormous round head, two tiny stubs above eyes, very tiny vestigial arms, chubby body",
+        "filename": "carnotaurus_baby.png"
+      },
+      {
+        "prompt": "Carnotaurus juvenile, medium horned theropod, large head with two growing horns above eyes, extremely tiny arms, muscular bipedal body",
+        "filename": "carnotaurus_teen.png"
+      },
+      {
+        "prompt": "Carnotaurus adult, large bull-horned theropod, massive head with two prominent horns above eyes, extremely tiny vestigial arms, powerful muscular legs, deep body",
+        "filename": "carnotaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Kentrosaurus baby, tiny stegosaurid, big round head, small beak, tiny alternating plates and spikes along back shown as small triangles, chubby body",
+        "filename": "kentrosaurus_baby.png"
+      },
+      {
+        "prompt": "Kentrosaurus juvenile, small stegosaurid, small plates along front back and long spikes along rear back and tail, four-legged body, small head",
+        "filename": "kentrosaurus_teen.png"
+      },
+      {
+        "prompt": "Kentrosaurus adult, spiked stegosaurid, small plates on shoulders transitioning to long sharp spikes on back and tail, four sturdy legs, small narrow head",
+        "filename": "kentrosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Oviraptor baby, tiny crested theropod, huge round head, toothless deep curved beak, small rounded crest on snout, chubby feathered body, short arms",
+        "filename": "oviraptor_baby.png"
+      },
+      {
+        "prompt": "Oviraptor juvenile, small feathered theropod, toothless deep beak, bony crest on top of snout, slender body, grasping three-fingered arms",
+        "filename": "oviraptor_teen.png"
+      },
+      {
+        "prompt": "Oviraptor adult, feathered theropod, toothless parrot-like beak, prominent rounded bony crest on snout, slender bipedal body, fan tail feathers",
+        "filename": "oviraptor_adult.png"
+      },
+  
+      {
+        "prompt": "Velociraptor baby, tiny feathered raptor, huge round head, narrow sickle-tooth snout, tiny raised sickle claw on foot, fluffy chubby body",
+        "filename": "velociraptor_baby.png"
+      },
+      {
+        "prompt": "Velociraptor juvenile, small feathered raptor, narrow snout with serrated teeth, raised curved sickle claw on second toe, feathered arms, agile body",
+        "filename": "velociraptor_teen.png"
+      },
+      {
+        "prompt": "Velociraptor adult, feathered raptor, narrow sickle-toothed snout, prominent raised curved sickle claw on foot, feathered arms, slim agile bipedal body",
+        "filename": "velociraptor_adult.png"
+      },
+  
+      {
+        "prompt": "Allosaurus baby, tiny large theropod, oversized round head, wide jaws with small teeth, tiny arms with three claws, chubby body, short tail",
+        "filename": "allosaurus_baby.png"
+      },
+      {
+        "prompt": "Allosaurus juvenile, medium theropod, large head with wide jaw and teeth, small brow ridges above eyes, three-clawed arms, powerful legs",
+        "filename": "allosaurus_teen.png"
+      },
+      {
+        "prompt": "Allosaurus adult, large apex predator, massive wide-jawed head with blade-like teeth, small horn ridges above eyes, three-clawed arms, powerful bipedal body",
+        "filename": "allosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Stegosaurus baby, tiny plated dinosaur, small round head, tiny beak, two rows of very small diamond plates along back, chubby four-legged body, tiny tail spikes",
+        "filename": "stegosaurus_baby.png"
+      },
+      {
+        "prompt": "Stegosaurus juvenile, small plated dinosaur, tiny head, two rows of growing triangular back plates, four sturdy legs, tail with small spikes",
+        "filename": "stegosaurus_teen.png"
+      },
+      {
+        "prompt": "Stegosaurus adult, large plated dinosaur, very small head, two prominent rows of large diamond-shaped back plates, four sturdy legs, tail with four sharp spikes",
+        "filename": "stegosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Ankylosaurus baby, tiny armored dinosaur, big round head, small beak, bumpy armored back shown as simple geometric pattern, four stubby legs, tiny tail club",
+        "filename": "ankylosaurus_baby.png"
+      },
+      {
+        "prompt": "Ankylosaurus juvenile, small armored dinosaur, wide flat head with small horns, rows of bony scutes on back, four legs, tail with growing club",
+        "filename": "ankylosaurus_teen.png"
+      },
+      {
+        "prompt": "Ankylosaurus adult, heavily armored dinosaur, wide flat head with side horns, full body armor of bony scutes, four sturdy low legs, massive round tail club",
+        "filename": "ankylosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Therizinosaurus baby, tiny long-clawed dinosaur, big round fluffy head, small beak, two enormous oversized curved claws on tiny arms, chubby feathered body",
+        "filename": "therizinosaurus_baby.png"
+      },
+      {
+        "prompt": "Therizinosaurus juvenile, medium feathered dinosaur, small head with beak, growing enormously long curved claws on arms, pot-bellied body, four-toed feet",
+        "filename": "therizinosaurus_teen.png"
+      },
+      {
+        "prompt": "Therizinosaurus adult, large feathered dinosaur, small head with beak, three enormously long scythe-like claws on arms clearly dominant feature, large round belly, bipedal",
+        "filename": "therizinosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Tyrannosaurus baby, tiny T-Rex, enormous round head with wide jaw and tiny teeth, comically tiny two-fingered arms, chubby powerful body, thick tail",
+        "filename": "tyrannosaurus_baby.png"
+      },
+      {
+        "prompt": "Tyrannosaurus juvenile, medium T-Rex, large wide jaw with sharp teeth, tiny two-fingered arms, muscular bipedal body, thick tail",
+        "filename": "tyrannosaurus_teen.png"
+      },
+      {
+        "prompt": "Tyrannosaurus adult, massive T-Rex, enormous wide-jawed head with large sharp teeth, comically tiny two-fingered arms, massively powerful legs, thick heavy tail",
+        "filename": "tyrannosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Spinosaurus baby, tiny sail-backed dinosaur, large round head, long narrow crocodile-like snout, tiny sail fin on back shown as small triangle row, chubby body",
+        "filename": "spinosaurus_baby.png"
+      },
+      {
+        "prompt": "Spinosaurus juvenile, medium sail-backed dinosaur, long narrow snout with conical teeth, growing tall spined sail along back, large three-clawed arms, semi-aquatic body",
+        "filename": "spinosaurus_teen.png"
+      },
+      {
+        "prompt": "Spinosaurus adult, large sail-backed dinosaur, very long narrow crocodilian snout, tall prominent neural spine sail on back, large powerful arms, semi-aquatic body",
+        "filename": "spinosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Brachiosaurus baby, tiny long-necked sauropod, enormous round head on tiny body, very long neck going straight up, four stubby legs, chubby round body",
+        "filename": "brachiosaurus_baby.png"
+      },
+      {
+        "prompt": "Brachiosaurus juvenile, medium long-necked sauropod, small head on long upright neck, barrel body, four pillar legs, short tail, front legs longer than back",
+        "filename": "brachiosaurus_teen.png"
+      },
+      {
+        "prompt": "Brachiosaurus adult, giant long-necked sauropod, tiny head on very long upright neck, massive barrel body, four massive pillar legs, front legs noticeably taller than back legs",
+        "filename": "brachiosaurus_adult.png"
+      },
+  
+      {
+        "prompt": "Triceratops baby, tiny three-horned dinosaur, enormous round head, large frill shown as semicircle behind head, three tiny horn stubs, chubby four-legged body",
+        "filename": "triceratops_baby.png"
+      },
+      {
+        "prompt": "Triceratops juvenile, medium three-horned ceratopsian, large head with growing frill, three growing horns (two brow horns and one nose horn), sturdy four-legged body",
+        "filename": "triceratops_teen.png"
+      },
+      {
+        "prompt": "Triceratops adult, large three-horned ceratopsian, massive head with large round frill, two long prominent brow horns and one shorter nose horn, massive sturdy four-legged body",
+        "filename": "triceratops_adult.png"
+      },
+  
+      {
+        "prompt": "Tupuxuara baby, tiny pterosaur, huge round head, very large rounded head crest shown as dome shape, long toothless beak, tiny folded wings, chubby body",
+        "filename": "tupuxuara_baby.png"
+      },
+      {
+        "prompt": "Tupuxuara juvenile, medium pterosaur, large rounded sail-like head crest, long toothless beak, growing membrane wings, slim body, short tail",
+        "filename": "tupuxuara_teen.png"
+      },
+      {
+        "prompt": "Tupuxuara adult, large pterosaur, very prominent large rounded fan-shaped head crest, long toothless beak, large membrane wings spread slightly, slim body",
+        "filename": "tupuxuara_adult.png"
+      },
+  
+      {
+        "prompt": "Chicken baby, tiny baby chick, huge round fluffy head, tiny orange triangle beak, small round fluffy yellow body, two tiny stubby wings, two thin legs",
+        "filename": "chicken_baby.png"
+      },
+      {
+        "prompt": "Chicken juvenile, young rooster or hen, medium round head, small orange beak, small red comb on top, growing wing feathers, round body, two legs",
+        "filename": "chicken_teen.png"
+      },
+      {
+        "prompt": "Chicken adult, full grown rooster, round head with prominent red comb and wattle, orange beak, full wing feathers, round plump body, two sturdy legs, tail feathers",
+        "filename": "chicken_adult.png"
+      }
+    ]
+  }
