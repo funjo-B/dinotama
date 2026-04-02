@@ -259,7 +259,7 @@ export function GachaPanel({ isOpen, onClose, onPull, userUid }: GachaPanelProps
                     }}>
                       <div style={{
                         width: 6, height: 6, borderRadius: '50%',
-                        background: def.baseColor, flexShrink: 0,
+                        background: config.color, flexShrink: 0,
                       }} />
                       <span style={{ fontSize: 11, color: '#cbd5e1' }}>
                         {getSpeciesName(def)}

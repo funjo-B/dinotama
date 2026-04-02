@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { DinoStage, DinoSpeciesId, DinoRarity } from '@shared/types';
-import { SPECIES_DEFS, REAL_SPRITE_SPECIES } from '@shared/constants';
+import { SPECIES_DEFS, REAL_SPRITE_SPECIES, HIDDEN_TRANSFORMS, getTransformedDef } from '@shared/constants';
 import { useT, useSpeciesName } from '../hooks/useT';
 
 interface MergeAnimationProps {
@@ -38,7 +38,10 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
   if (!species || !fromStage || !toStage) return null;
 
   const def = SPECIES_DEFS[species];
-  const color = def?.baseColor ?? '#fff';
+  const transform = toStage === 'adult' ? HIDDEN_TRANSFORMS[species] : undefined;
+  const displayDef = getTransformedDef(species, toStage);
+  const color = transform?.baseColor ?? def?.baseColor ?? '#fff';
+  const toSpriteFolder = transform?.spriteFolder ?? species;
 
   return (
     <div
@@ -123,7 +126,7 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
               transition={{ duration: 1.5, repeat: Infinity }}
             >
               <img
-                src={`./assets/sprites/${toStage}/${species}/sprite_${toStage}_idle_01.png`}
+                src={`./assets/sprites/${toStage}/${toSpriteFolder}/sprite_${toStage}_idle_01.png`}
                 width={64}
                 height={64}
                 style={{ imageRendering: 'pixelated' }}
@@ -134,10 +137,10 @@ export function MergeAnimation({ species, fromStage, toStage, onComplete }: Merg
               />
             </motion.div>
             <div style={{ color, fontWeight: 700, fontSize: 13 }}>
-              {t.merge.success}
+              {transform ? '🔥 ' : ''}{t.merge.success}
             </div>
             <div style={{ color: '#fff', fontSize: 12 }}>
-              {getSpeciesName(def, species)} → {STAGE_EMOJI[toStage]} {t.merge.stageLabel[toStage]}
+              {getSpeciesName(displayDef, species)} → {STAGE_EMOJI[toStage]} {t.merge.stageLabel[toStage]}
             </div>
             <motion.div
               initial={{ opacity: 0 }}

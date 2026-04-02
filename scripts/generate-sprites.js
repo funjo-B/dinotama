@@ -942,6 +942,428 @@ function drawChicken(ctx, c, dc) {
   ctx.stroke();
 }
 
+function drawCarp(ctx, c, dc) {
+  // Body - fat oval fish
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 6, 28, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Belly
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.ellipse(cx + 2, cy + 12, 20, 6, 0, 0, Math.PI);
+  ctx.fill();
+  // Tail fin
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.moveTo(cx - 26, cy + 6);
+  ctx.quadraticCurveTo(cx - 40, cy - 10, cx - 38, cy - 16);
+  ctx.quadraticCurveTo(cx - 32, cy + 4, cx - 26, cy + 6);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - 26, cy + 6);
+  ctx.quadraticCurveTo(cx - 40, cy + 22, cx - 38, cy + 28);
+  ctx.quadraticCurveTo(cx - 32, cy + 8, cx - 26, cy + 6);
+  ctx.fill();
+  // Dorsal fin
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy - 6);
+  ctx.quadraticCurveTo(cx, cy - 20, cx + 10, cy - 6);
+  ctx.fill();
+  // Scales pattern
+  ctx.strokeStyle = dc;
+  ctx.lineWidth = 0.8;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(cx - 6 + i * 8, cy + 4, 5, 0, Math.PI);
+    ctx.stroke();
+  }
+  // Mouth
+  ctx.strokeStyle = dc;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx + 26, cy + 4, 3, -0.5, 0.5);
+  ctx.stroke();
+  // Whiskers (잉어 수염)
+  ctx.strokeStyle = dc;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx + 26, cy + 2);
+  ctx.quadraticCurveTo(cx + 36, cy - 4, cx + 38, cy - 8);
+  ctx.moveTo(cx + 26, cy + 8);
+  ctx.quadraticCurveTo(cx + 36, cy + 14, cx + 38, cy + 18);
+  ctx.stroke();
+}
+
+function drawLizard(ctx, c, dc) {
+  // Body
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 8, 18, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(cx + 22, cy + 2, 10, 7, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  // Tail - long curving
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 16, cy + 8);
+  ctx.quadraticCurveTo(cx - 30, cy + 4, cx - 36, cy - 4);
+  ctx.quadraticCurveTo(cx - 40, cy - 12, cx - 34, cy - 16);
+  ctx.stroke();
+  // Belly
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 12, 14, 5, 0, 0, Math.PI);
+  ctx.fill();
+  // Front legs
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx + 10, cy + 16);
+  ctx.lineTo(cx + 14, cy + 30);
+  ctx.lineTo(cx + 20, cy + 28);
+  ctx.moveTo(cx - 6, cy + 16);
+  ctx.lineTo(cx - 10, cy + 30);
+  ctx.lineTo(cx - 16, cy + 28);
+  ctx.stroke();
+  // Back legs
+  ctx.beginPath();
+  ctx.moveTo(cx + 8, cy + 16);
+  ctx.lineTo(cx + 4, cy + 30);
+  ctx.lineTo(cx + 10, cy + 32);
+  ctx.moveTo(cx - 4, cy + 16);
+  ctx.lineTo(cx - 8, cy + 30);
+  ctx.lineTo(cx - 14, cy + 32);
+  ctx.stroke();
+  // Spots
+  ctx.fillStyle = dc;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.ellipse(cx - 8 + i * 10, cy + 4, 3, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Tongue
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx + 32, cy + 2);
+  ctx.quadraticCurveTo(cx + 40, cy - 2, cx + 42, cy + 4);
+  ctx.stroke();
+}
+
+function drawPhoenix(ctx, c, dc) {
+  // Flaming aura
+  ctx.fillStyle = 'rgba(255,100,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 4, 40, 36, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Flame tail feathers
+  const flames = [
+    { x: cx - 28, y: cy + 10, w: 10, h: 24, r: -0.3 },
+    { x: cx - 20, y: cy + 6,  w: 8,  h: 28, r: -0.15 },
+    { x: cx - 12, y: cy + 4,  w: 8,  h: 32, r: 0 },
+  ];
+  for (const f of flames) {
+    ctx.fillStyle = '#ff6b00';
+    ctx.beginPath();
+    ctx.ellipse(f.x, f.y, f.w, f.h, f.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.ellipse(f.x + 2, f.y + 4, f.w * 0.5, f.h * 0.6, f.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Body
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 4, cy + 6, 18, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Neck
+  ctx.beginPath();
+  ctx.ellipse(cx + 16, cy - 8, 8, 12, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(cx + 20, cy - 18, 9, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Crown feathers
+  ctx.fillStyle = '#ffd700';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx + 16 + i * 4, cy - 24);
+    ctx.lineTo(cx + 18 + i * 4, cy - 36 + i * 2);
+    ctx.lineTo(cx + 20 + i * 4, cy - 24);
+    ctx.fill();
+  }
+  // Wings spread
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx + 4, cy);
+  ctx.quadraticCurveTo(cx + 30, cy - 30, cx + 44, cy - 20);
+  ctx.quadraticCurveTo(cx + 36, cy - 6, cx + 16, cy + 4);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.quadraticCurveTo(cx - 24, cy - 30, cx - 38, cy - 18);
+  ctx.quadraticCurveTo(cx - 30, cy - 4, cx - 10, cy + 4);
+  ctx.fill();
+  // Wing fire tips
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.ellipse(cx + 44, cy - 20, 5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(cx - 38, cy - 18, 5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Beak
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.moveTo(cx + 28, cy - 19);
+  ctx.lineTo(cx + 38, cy - 16);
+  ctx.lineTo(cx + 28, cy - 14);
+  ctx.fill();
+  // Legs
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx + 2, cy + 18);
+  ctx.lineTo(cx, cy + 34);
+  ctx.moveTo(cx + 10, cy + 18);
+  ctx.lineTo(cx + 12, cy + 34);
+  ctx.stroke();
+}
+
+function drawEasternDragon(ctx, c, dc) {
+  // Serpentine body (S-curve) — 동양용 특유의 긴 몸
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 36, cy + 24);
+  ctx.bezierCurveTo(cx - 20, cy - 10, cx - 4, cy + 30, cx + 12, cy - 4);
+  ctx.bezierCurveTo(cx + 22, cy - 24, cx + 30, cy - 10, cx + 36, cy - 18);
+  ctx.stroke();
+  // Body fill (thicker stroke for body feel)
+  ctx.strokeStyle = dc;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(cx - 34, cy + 22);
+  ctx.bezierCurveTo(cx - 18, cy - 8, cx - 2, cy + 28, cx + 14, cy - 2);
+  ctx.bezierCurveTo(cx + 24, cy - 22, cx + 32, cy - 8, cx + 38, cy - 16);
+  ctx.stroke();
+  // Head
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 36, cy - 20, 10, 8, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Horns (deer-like)
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx + 30, cy - 26);
+  ctx.lineTo(cx + 26, cy - 38);
+  ctx.lineTo(cx + 22, cy - 34);
+  ctx.moveTo(cx + 26, cy - 38);
+  ctx.lineTo(cx + 30, cy - 42);
+  ctx.moveTo(cx + 38, cy - 26);
+  ctx.lineTo(cx + 42, cy - 38);
+  ctx.lineTo(cx + 46, cy - 34);
+  ctx.moveTo(cx + 42, cy - 38);
+  ctx.lineTo(cx + 38, cy - 42);
+  ctx.stroke();
+  // Whiskers (긴 수염)
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx + 44, cy - 18);
+  ctx.quadraticCurveTo(cx + 56, cy - 24, cx + 60, cy - 30);
+  ctx.moveTo(cx + 44, cy - 14);
+  ctx.quadraticCurveTo(cx + 56, cy - 8, cx + 60, cy - 2);
+  ctx.stroke();
+  // Dragon pearl (여의주)
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(cx + 60, cy - 16, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.beginPath();
+  ctx.arc(cx + 58, cy - 18, 2, 0, Math.PI * 2);
+  ctx.fill();
+  // Mane / fur tufts along body
+  ctx.fillStyle = '#ffd700';
+  const manePoints = [
+    { x: cx - 30, y: cy + 18 },
+    { x: cx - 14, y: cy },
+    { x: cx + 4,  y: cy + 16 },
+    { x: cx + 20, y: cy - 8  },
+  ];
+  for (const p of manePoints) {
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y - 6, 4, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Tail cloud tuft
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.ellipse(cx - 38, cy + 24, 6, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Short legs
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy + 16);
+  ctx.lineTo(cx - 14, cy + 30);
+  ctx.moveTo(cx + 8, cy + 8);
+  ctx.lineTo(cx + 4, cy + 22);
+  ctx.stroke();
+  // Claws
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 14, cy + 30);
+  ctx.lineTo(cx - 18, cy + 33);
+  ctx.moveTo(cx - 14, cy + 30);
+  ctx.lineTo(cx - 12, cy + 34);
+  ctx.moveTo(cx + 4, cy + 22);
+  ctx.lineTo(cx, cy + 25);
+  ctx.moveTo(cx + 4, cy + 22);
+  ctx.lineTo(cx + 6, cy + 26);
+  ctx.stroke();
+}
+
+function drawWesternDragon(ctx, c, dc) {
+  // Body
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, 22, 16, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Belly plates
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.ellipse(cx + 2, cy + 10, 14, 8, 0, 0, Math.PI);
+  ctx.fill();
+  // Neck
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 22, cy - 10, 10, 14, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(cx + 30, cy - 22, 12, 9, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+  // Horns
+  ctx.fillStyle = '#64748b';
+  ctx.beginPath();
+  ctx.moveTo(cx + 24, cy - 28);
+  ctx.lineTo(cx + 18, cy - 42);
+  ctx.lineTo(cx + 28, cy - 30);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + 34, cy - 28);
+  ctx.lineTo(cx + 40, cy - 42);
+  ctx.lineTo(cx + 30, cy - 30);
+  ctx.fill();
+  // Snout
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(cx + 40, cy - 22, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Nostrils (fire breath)
+  ctx.fillStyle = '#ff6b00';
+  ctx.beginPath();
+  ctx.ellipse(cx + 46, cy - 23, 3, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.ellipse(cx + 50, cy - 24, 4, 2, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Wings (large bat-like)
+  ctx.fillStyle = dc;
+  ctx.globalAlpha = 0.8;
+  // Left wing
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, cy);
+  ctx.quadraticCurveTo(cx - 20, cy - 40, cx - 44, cy - 34);
+  ctx.lineTo(cx - 36, cy - 20);
+  ctx.lineTo(cx - 42, cy - 10);
+  ctx.lineTo(cx - 30, cy - 6);
+  ctx.quadraticCurveTo(cx - 16, cy - 2, cx - 4, cy);
+  ctx.fill();
+  // Right wing
+  ctx.beginPath();
+  ctx.moveTo(cx + 6, cy - 6);
+  ctx.quadraticCurveTo(cx + 20, cy - 44, cx + 44, cy - 38);
+  ctx.lineTo(cx + 36, cy - 24);
+  ctx.lineTo(cx + 42, cy - 14);
+  ctx.lineTo(cx + 30, cy - 8);
+  ctx.quadraticCurveTo(cx + 16, cy - 4, cx + 6, cy - 6);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  // Wing bone structure
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, cy);
+  ctx.lineTo(cx - 44, cy - 34);
+  ctx.moveTo(cx - 20, cy - 18);
+  ctx.lineTo(cx - 36, cy - 20);
+  ctx.moveTo(cx - 24, cy - 10);
+  ctx.lineTo(cx - 42, cy - 10);
+  ctx.stroke();
+  // Tail
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.moveTo(cx - 20, cy + 8);
+  ctx.quadraticCurveTo(cx - 38, cy + 16, cx - 44, cy + 10);
+  ctx.quadraticCurveTo(cx - 48, cy + 6, cx - 44, cy + 2);
+  ctx.quadraticCurveTo(cx - 36, cy + 8, cx - 20, cy + 4);
+  ctx.fill();
+  // Tail spike
+  ctx.fillStyle = dc;
+  ctx.beginPath();
+  ctx.moveTo(cx - 44, cy + 6);
+  ctx.lineTo(cx - 54, cy + 2);
+  ctx.lineTo(cx - 50, cy + 10);
+  ctx.lineTo(cx - 44, cy + 6);
+  ctx.fill();
+  // Spikes along spine
+  ctx.fillStyle = dc;
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx + 6 - i * 8, cy - 10 + i * 2);
+    ctx.lineTo(cx + 8 - i * 8, cy - 18 + i * 2);
+    ctx.lineTo(cx + 10 - i * 8, cy - 10 + i * 2);
+    ctx.fill();
+  }
+  // Legs
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy + 16);
+  ctx.lineTo(cx - 12, cy + 32);
+  ctx.moveTo(cx + 8, cy + 16);
+  ctx.lineTo(cx + 12, cy + 32);
+  ctx.stroke();
+  // Claws
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, cy + 32);
+  ctx.lineTo(cx - 18, cy + 36);
+  ctx.moveTo(cx - 12, cy + 32);
+  ctx.lineTo(cx - 10, cy + 38);
+  ctx.moveTo(cx + 12, cy + 32);
+  ctx.lineTo(cx + 6, cy + 36);
+  ctx.moveTo(cx + 12, cy + 32);
+  ctx.lineTo(cx + 14, cy + 38);
+  ctx.stroke();
+}
+
 // Extend SPECIES with all 29 new species (reusing existing draw shapes where suitable)
 Object.assign(SPECIES, {
   // ── COMMON extras ──────────────────────────────────────────────────────────
@@ -975,7 +1397,23 @@ Object.assign(SPECIES, {
 
   // ── HIDDEN ─────────────────────────────────────────────────────────────────
   chicken:            { color: '#ff6b6b', eyeOffset: { x: 14, y: -10 }, draw(ctx, c, dc) { drawChicken(ctx, c, dc); } },
+  carp:               { color: '#f97316', eyeOffset: { x: 20, y: 2   }, draw(ctx, c, dc) { drawCarp(ctx, c, dc); } },
+  lizard:             { color: '#84cc16', eyeOffset: { x: 22, y: -6  }, draw(ctx, c, dc) { drawLizard(ctx, c, dc); } },
 });
+
+// ── Hidden Transform Species (adult only) ────────────────────────────────────
+const TRANSFORM_SPECIES = {
+  phoenix:        { color: '#ff4500', eyeOffset: { x: 16, y: -18 }, draw(ctx, c, dc) { drawPhoenix(ctx, c, dc); } },
+  eastern_dragon: { color: '#ffd700', eyeOffset: { x: 22, y: -14 }, draw(ctx, c, dc) { drawEasternDragon(ctx, c, dc); } },
+  western_dragon: { color: '#9333ea', eyeOffset: { x: 20, y: -20 }, draw(ctx, c, dc) { drawWesternDragon(ctx, c, dc); } },
+};
+
+// Hidden → Transform mapping
+const HIDDEN_TRANSFORMS = {
+  chicken: 'phoenix',
+  carp:    'eastern_dragon',
+  lizard:  'western_dragon',
+};
 
 // ─── Egg ───
 function drawEgg(ctx, color, emotion) {
@@ -1100,6 +1538,52 @@ for (const stage of STAGES) {
       );
       count++;
     }
+  }
+}
+
+// ─── Generate transform sprites (Hidden adult forms) ───
+for (const [hiddenSpecies, transformName] of Object.entries(HIDDEN_TRANSFORMS)) {
+  const transformSpec = TRANSFORM_SPECIES[transformName];
+  if (!transformSpec) continue;
+
+  const dir = path.join(outDir, 'adult', transformName);
+  fs.mkdirSync(dir, { recursive: true });
+
+  for (const emotion of EMOTIONS) {
+    const canvas = createCanvas(SIZE, SIZE);
+    const ctx = canvas.getContext('2d');
+
+    const mod = EMOTION_MODS[emotion];
+    const c = adjustColor(transformSpec.color, mod.brightness);
+    const dc = adjustColor(transformSpec.color, mod.brightness * 0.65);
+
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 48, 24, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    transformSpec.draw(ctx, c, dc);
+
+    // Eyes
+    const ep = transformSpec.eyeOffset;
+    drawEyes(ctx, cx + ep.x, cy + ep.y, 3.5, emotion);
+
+    // Emotion suffix
+    if (mod.suffix) {
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(mod.suffix, cx + 30, cy - 30);
+    }
+
+    fs.writeFileSync(
+      path.join(dir, `sprite_adult_${emotion}_01.png`),
+      canvas.toBuffer('image/png')
+    );
+    count++;
   }
 }
 

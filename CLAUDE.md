@@ -98,9 +98,15 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 - 웹 호스팅 변경 시 `hosting/` 폴더 커밋 포함
 
 ## Species System
-- 29종: 5레어도 (Common 8종 / Rare 8종 / Epic 7종 / Legend 5종 / Hidden 1종)
+- 31종: 5레어도 (Common 8종 / Rare 8종 / Epic 7종 / Legend 5종 / Hidden 3종)
 - 스프라이트 경로: `public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_{frame}.png`
 - Hidden 종은 가챠 패널에서 "???" 으로 표시 (비공개)
+- Hidden 변신 시스템: baby/teen은 평범한 동물 → adult에서 전설 존재로 변신
+  - 닭(chicken) → 불사조(phoenix)
+  - 잉어(carp) → 동양용(eastern_dragon)
+  - 도마뱀(lizard) → 서양용(western_dragon)
+- 변신 시 스프라이트 경로: `public/assets/sprites/adult/{변신폼}/sprite_adult_{emotion}_{frame}.png`
+- 변신 시 이름/색상도 변경 (getTransformedDef 헬퍼 사용)
 
 ## Window Architecture
 - 공룡 창: 320x280 고정 (transparent, always-on-top)

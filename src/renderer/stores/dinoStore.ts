@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Dino, DinoEmotion, DinoRarity, DinoSpeciesId, DinoStage, DinoStats, GachaState, CoinTransaction, CoinTxType, AttendanceState } from '@shared/types';
-import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MULTIPLIER, SPECIES_DEFS, AD_REWARD_COINS } from '@shared/constants';
+import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MULTIPLIER, SPECIES_DEFS, AD_REWARD_COINS, getTransformedDef } from '@shared/constants';
 
 // Debounced cloud sync — saves after important actions
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -409,7 +409,7 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     }
 
     const newCoins = state.coins + price;
-    const specName = SPECIES_DEFS[dino.species]?.nameKo ?? dino.species;
+    const specName = getTransformedDef(dino.species, dino.stage)?.nameKo ?? dino.species;
     const tx: CoinTransaction = {
       id: crypto.randomUUID(), type: 'sell', amount: price,
       balance: newCoins, label: `${specName} 판매`, timestamp: Date.now(),

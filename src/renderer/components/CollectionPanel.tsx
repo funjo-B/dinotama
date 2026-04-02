@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
-import { SPECIES_DEFS, SELL_PRICES, STAGE_SELL_MULTIPLIER } from '@shared/constants';
+import { SPECIES_DEFS, SELL_PRICES, STAGE_SELL_MULTIPLIER, getTransformedDef } from '@shared/constants';
 import type { Dino, DinoStage, DinoSpeciesId } from '@shared/types';
 import { MergeAnimation } from './MergeAnimation';
 import { useT, useSpeciesName } from '../hooks/useT';
@@ -206,6 +206,7 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
             {groups.map((group) => {
               const key = `${group.species}_${group.stage}`;
               const def = SPECIES_DEFS[group.species];
+              const displayDef = getTransformedDef(group.species, group.stage);
               const expanded = expandedGroup === key;
               const rarityColor = RARITY_COLORS[def?.rarity ?? 'common'];
 
@@ -227,11 +228,11 @@ export function CollectionPanel({ isOpen, onClose, onAction }: CollectionPanelPr
                   >
                     <div style={{
                       width: 8, height: 8, borderRadius: '50%',
-                      background: def?.baseColor ?? '#888',
+                      background: rarityColor,
                       flexShrink: 0,
                     }} />
                     <span style={{ flex: 1, fontWeight: 600 }}>
-                      {getSpeciesName(def, group.species)}
+                      {getSpeciesName(displayDef, group.species)}
                     </span>
                     <span style={{ fontSize: 10, color: rarityColor }}>
                       {t.collection.stageLabel[group.stage]}

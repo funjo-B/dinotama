@@ -9,7 +9,7 @@ import { useCalendarNotifications } from './hooks/useCalendarNotifications';
 import { useAuth } from './hooks/useAuth';
 import { useDinoStore } from './stores/dinoStore';
 import type { Dino } from '@shared/types';
-import { SPECIES_DEFS } from '@shared/constants';
+import { SPECIES_DEFS, getTransformedDef } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
 import { TodoReminder } from './components/TodoReminder';
 import { GachaAnimation } from './components/GachaAnimation';
@@ -305,7 +305,7 @@ function DinoApp() {
               label: t.menu.selectDino,
               submenu: [
                 ...dinos.slice(0, 5).map((d) => {
-                  const sName = getSpeciesName(SPECIES_DEFS[d.species], d.species);
+                  const sName = getSpeciesName(getTransformedDef(d.species, d.stage), d.species);
                   const stageLabel = t.menu.stage[d.stage];
                   const check = d.id === activeDino?.id ? ' ✓' : '';
                   return { label: `${d.name} (${sName}/${stageLabel})${check}`, action: () => setActiveDino(d.id) };

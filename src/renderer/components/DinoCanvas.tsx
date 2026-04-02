@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
-import { REAL_SPRITE_SPECIES, SPRITE_FRAME_COUNTS } from '@shared/constants';
+import { REAL_SPRITE_SPECIES, SPRITE_FRAME_COUNTS, HIDDEN_TRANSFORMS } from '@shared/constants';
 import type { DinoEmotion } from '@shared/types';
 import type { TargetAndTransition } from 'framer-motion';
 
@@ -89,23 +89,28 @@ export function DinoCanvas() {
           justifyContent: 'center',
         }}
       >
-        {activeDino ? (
-          <img
-            src={`./assets/sprites/${activeDino.stage}/${activeDino.species}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`}
-            alt={activeDino.name}
-            width={128}
-            height={128}
-            style={{ imageRendering: REAL_SPRITE_SPECIES.has(activeDino.species) ? 'auto' : 'pixelated' }}
-            draggable={false}
-            onError={(e) => {
-              // Fallback to legacy rarity-based sprite
-              const fallback = `./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`;
-              if ((e.target as HTMLImageElement).src !== fallback) {
-                (e.target as HTMLImageElement).src = fallback;
-              }
-            }}
-          />
-        ) : (
+        {activeDino ? (() => {
+          // Hidden 종이 adult일 때 변신 폼 스프라이트 사용
+          const transform = activeDino.stage === 'adult' ? HIDDEN_TRANSFORMS[activeDino.species] : undefined;
+          const spriteFolder = transform?.spriteFolder ?? activeDino.species;
+          return (
+            <img
+              src={`./assets/sprites/${activeDino.stage}/${spriteFolder}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`}
+              alt={activeDino.name}
+              width={128}
+              height={128}
+              style={{ imageRendering: REAL_SPRITE_SPECIES.has(activeDino.species) ? 'auto' : 'pixelated' }}
+              draggable={false}
+              onError={(e) => {
+                // Fallback to legacy rarity-based sprite
+                const fallback = `./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`;
+                if ((e.target as HTMLImageElement).src !== fallback) {
+                  (e.target as HTMLImageElement).src = fallback;
+                }
+              }}
+            />
+          );
+        })() : (
           <EggPlaceholder />
         )}
       </motion.div>

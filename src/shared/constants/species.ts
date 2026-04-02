@@ -1,4 +1,4 @@
-import type { DinoRarity, DinoSpeciesId, DinoSpeciesDef } from '../types';
+import type { DinoRarity, DinoSpeciesId, DinoSpeciesDef, DinoStage } from '../types';
 
 // 실제 아트 스프라이트가 있는 종 목록 — 이 종은 imageRendering: 'auto' (스무스) 로 렌더링
 export const REAL_SPRITE_SPECIES = new Set<DinoSpeciesId>([
@@ -32,7 +32,7 @@ export const SPECIES_POOL: Record<DinoRarity, DinoSpeciesId[]> = {
   rare:    ['triceratops', 'ankylosaurus', 'pachycephalosaurus', 'allosaurus', 'carnotaurus', 'pteranodon', 'plesiosaurus', 'kronosaurus'],
   epic:    ['brachiosaurus', 'stegoceras', 'spinosaurus', 'baryonyx', 'quetzalcoatlus', 'mosasaurus', 'elasmosaurus'],
   legend:  ['argentinosaurus', 'tyrannosaurus', 'giganotosaurus', 'velociraptor', 'tupuxuara'],
-  hidden:  ['chicken'],
+  hidden:  ['chicken', 'carp', 'lizard'],
 };
 
 export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
@@ -72,6 +72,33 @@ export const SPECIES_DEFS: Record<DinoSpeciesId, DinoSpeciesDef> = {
   velociraptor:       { id: 'velociraptor',       nameKo: '벨로키랍토르',       nameEn: 'Velociraptor',       rarity: 'legend', baseColor: '#fb923c', diet: 'carnivore' },
   tupuxuara:          { id: 'tupuxuara',          nameKo: '투푸수아라',         nameEn: 'Tupuxuara',          rarity: 'legend', baseColor: '#f59e0b', diet: 'flyer'     },
 
-  // ── HIDDEN (1) ──────────────────────────────────────────────────────────────
+  // ── HIDDEN (3) ──────────────────────────────────────────────────────────────
   chicken:            { id: 'chicken',            nameKo: '닭',                 nameEn: 'Chicken',            rarity: 'hidden', baseColor: '#ff6b6b', diet: 'special'   },
+  carp:               { id: 'carp',               nameKo: '잉어',               nameEn: 'Carp',               rarity: 'hidden', baseColor: '#f97316', diet: 'special'   },
+  lizard:             { id: 'lizard',             nameKo: '도마뱀',             nameEn: 'Lizard',             rarity: 'hidden', baseColor: '#84cc16', diet: 'special'   },
 };
+
+// ── Hidden 종 변신 시스템 ──────────────────────────────────────────────────────
+// baby/teen: 평범한 동물 → adult: 전설의 존재로 변신
+export interface HiddenTransform {
+  nameKo: string;
+  nameEn: string;
+  baseColor: string;
+  spriteFolder: string; // adult 스프라이트 경로에 사용
+}
+
+export const HIDDEN_TRANSFORMS: Partial<Record<DinoSpeciesId, HiddenTransform>> = {
+  chicken: { nameKo: '불사조',     nameEn: 'Phoenix',         baseColor: '#ff4500', spriteFolder: 'phoenix'         },
+  carp:    { nameKo: '동양용',     nameEn: 'Eastern Dragon',  baseColor: '#ffd700', spriteFolder: 'eastern_dragon'  },
+  lizard:  { nameKo: '서양용',     nameEn: 'Western Dragon',  baseColor: '#9333ea', spriteFolder: 'western_dragon'  },
+};
+
+/** adult 히든 종이면 변신 이름을 반환, 아니면 원래 def 반환 */
+export function getTransformedDef(species: DinoSpeciesId, stage: DinoStage): { nameKo: string; nameEn: string; baseColor: string } {
+  const def = SPECIES_DEFS[species];
+  if (stage === 'adult') {
+    const t = HIDDEN_TRANSFORMS[species];
+    if (t) return { nameKo: t.nameKo, nameEn: t.nameEn, baseColor: t.baseColor };
+  }
+  return def;
+}

@@ -16,8 +16,8 @@ export type DinoSpeciesId =
   | 'quetzalcoatlus' | 'mosasaurus' | 'elasmosaurus'
   // LEGEND (5)
   | 'argentinosaurus' | 'tyrannosaurus' | 'giganotosaurus' | 'velociraptor' | 'tupuxuara'
-  // HIDDEN (1)
-  | 'chicken';
+  // HIDDEN (3)
+  | 'chicken' | 'carp' | 'lizard';
 
 export type DinoDiet = 'herbivore' | 'carnivore' | 'flyer' | 'aquatic' | 'special';
 

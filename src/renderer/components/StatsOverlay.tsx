@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
-import { SPECIES_DEFS } from '@shared/constants';
+import { getTransformedDef } from '@shared/constants';
 
 interface StatsOverlayProps {
   visible: boolean;
@@ -13,7 +13,7 @@ export function StatsOverlay({ visible }: StatsOverlayProps) {
 
   if (!activeDino) return null;
 
-  const speciesName = SPECIES_DEFS[activeDino.species]?.nameKo ?? activeDino.species;
+  const speciesName = getTransformedDef(activeDino.species, activeDino.stage)?.nameKo ?? activeDino.species;
 
   const stats = [
     { label: '🍖', value: activeStats.hunger, color: '#f97316' },
