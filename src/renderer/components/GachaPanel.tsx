@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { GACHA_RATES, SPECIES_POOL, SPECIES_DEFS, PITY_THRESHOLDS, AD_REWARD_MAX_DAILY } from '@shared/constants';
 import type { DinoRarity } from '@shared/types';
 import { useDinoStore } from '../stores/dinoStore';
 import { useT, useSpeciesName } from '../hooks/useT';
+import { CoinHistoryPanel } from './CoinHistoryPanel';
 
 interface GachaPanelProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export function GachaPanel({ isOpen, onClose, onPull, userUid }: GachaPanelProps
   const adUsedToday = lastAdRewardDate === today ? adRewardUsedToday : 0;
   const adRemaining = AD_REWARD_MAX_DAILY - adUsedToday;
   const canWatchAd = !!userUid && adRemaining > 0;
+
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const handleAdReward = useCallback(() => {
     if (!userUid || !canWatchAd) return;
@@ -74,9 +77,24 @@ export function GachaPanel({ isOpen, onClose, onPull, userUid }: GachaPanelProps
         flexDirection: 'column',
         gap: 6,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, marginBottom: 2 }}>
           <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 11 }}>💰 {coins}</span>
+          <button
+            onClick={() => setHistoryOpen(true)}
+            style={{
+              background: 'rgba(251,191,36,0.15)',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: 4,
+              color: '#fbbf24',
+              fontSize: 10,
+              fontWeight: 700,
+              cursor: 'pointer',
+              padding: '1px 6px',
+              lineHeight: 1.4,
+            }}
+          >+</button>
         </div>
+        {historyOpen && <CoinHistoryPanel onClose={() => setHistoryOpen(false)} />}
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={() => onPull(1)}

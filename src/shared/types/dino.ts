@@ -59,6 +59,23 @@ export interface GachaState {
   pullsSinceHidden: number;
 }
 
+export type CoinTxType = 'gacha' | 'sell' | 'ad_reward' | 'daily_checkin' | 'streak_bonus';
+
+export interface CoinTransaction {
+  id: string;
+  type: CoinTxType;
+  amount: number;       // + 획득, - 소비
+  balance: number;      // 거래 후 잔액
+  label: string;        // "10연 뽑기", "스테고사우루스 판매" 등
+  timestamp: number;
+}
+
+export interface AttendanceState {
+  lastCheckDate: string;   // YYYY-MM-DD
+  streak: number;          // 연속 출석 일수
+  totalCheckins: number;   // 누적 출석
+}
+
 export interface TodoItem {
   id: string;
   text: string;
@@ -78,6 +95,10 @@ export interface UserData {
   activeDinoId: string | null;
   gacha: GachaState;
   totalSold: number;
+  coinHistory: CoinTransaction[];
+  attendance: AttendanceState;
+  adRewardUsedToday: number;
+  lastAdRewardDate: string;
   lastSyncTime: number;
   todos?: TodoItem[];
 }

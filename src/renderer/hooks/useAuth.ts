@@ -110,6 +110,11 @@ export function useAuth() {
                   coins: cloudData.coins ?? 100,
                   premiumCurrency: cloudData.premiumCurrency ?? 0,
                   gacha: cloudData.gacha ?? { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0 },
+                  totalSold: cloudData.totalSold ?? 0,
+                  coinHistory: (cloudData as any).coinHistory ?? [],
+                  attendance: (cloudData as any).attendance ?? { lastCheckDate: '', streak: 0, totalCheckins: 0 },
+                  adRewardUsedToday: (cloudData as any).adRewardUsedToday ?? 0,
+                  lastAdRewardDate: (cloudData as any).lastAdRewardDate ?? '',
                 });
                 console.log('[Auth] Cloud data loaded');
               } else {

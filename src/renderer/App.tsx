@@ -9,7 +9,7 @@ import { useCalendarNotifications } from './hooks/useCalendarNotifications';
 import { useAuth } from './hooks/useAuth';
 import { useDinoStore } from './stores/dinoStore';
 import type { Dino } from '@shared/types';
-import { SPECIES_DEFS, AD_REWARD_PULLS } from '@shared/constants';
+import { SPECIES_DEFS } from '@shared/constants';
 import type { MenuItem } from './hooks/useContextMenu';
 import { TodoReminder } from './components/TodoReminder';
 import { GachaAnimation } from './components/GachaAnimation';
@@ -146,19 +146,15 @@ function DinoApp() {
     return () => { delete (window as any).__dinoStoreSnapshot; };
   }, [user]);
 
-  // Process ad reward token
+  // Process ad reward token → 30 coins
   const processRewardToken = useCallback(async (token: string) => {
     try {
       const result = await window.dinoAPI?.validateAdReward?.(token);
-      if (result?.valid && result.pulls) {
+      if (result?.valid) {
         const store = useDinoStore.getState();
-        const dinos = store.grantAdReward(result.pulls);
+        const coins = store.grantAdReward();
         store.useAdReward();
-        if (dinos.length > 0) {
-          setGachaMultiResults(dinos);
-          setMultiPullKey((k) => k + 1);
-        }
-        console.log(`[Reward] Granted ${result.pulls} free pulls`);
+        console.log(`[Reward] Granted ${coins} coins from ad reward`);
       } else {
         console.warn('[Reward] Validation failed:', result?.reason);
       }
@@ -380,11 +376,12 @@ function DinoApp() {
         />
       </div>
 
-      {/* Background toggle — right side */}
+      {/* Right side — checkin + background toggle */}
       <div style={{
         position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-        zIndex: 100,
+        display: 'flex', flexDirection: 'column', gap: 4, zIndex: 100,
       }}>
+        <CheckinButton />
         <TipButton
           icon={backgroundVisible ? '⬜' : '🔲'}
           tip={backgroundVisible ? (t.settings.bgOn) : (t.settings.bgOff)}
@@ -609,6 +606,87 @@ function TipButton({ icon, tip, onClick, style }: { icon: string; tip: string; o
           pointerEvents: 'none',
         }}>
           {tip}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckinButton() {
+  const t = useT();
+  const attendance = useDinoStore((s) => s.attendance);
+  const dailyCheckin = useDinoStore((s) => s.dailyCheckin);
+  const [result, setResult] = useState<{ coins: number; streak: number; bonus: boolean } | null>(null);
+  const [hover, setHover] = useState(false);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const alreadyChecked = attendance.lastCheckDate === today;
+
+  const handleClick = () => {
+    if (alreadyChecked) return;
+    const res = dailyCheckin();
+    if (res) {
+      setResult(res);
+      setTimeout(() => setResult(null), 3000);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={handleClick}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          ...tabBtnBase,
+          background: alreadyChecked ? 'rgba(74,222,128,0.2)' : 'rgba(15,15,25,0.85)',
+          borderColor: alreadyChecked ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.15)',
+          fontSize: 13,
+          opacity: alreadyChecked ? 0.6 : 1,
+          cursor: alreadyChecked ? 'default' : 'pointer',
+        }}
+      >
+        {alreadyChecked ? '✅' : '📅'}
+      </button>
+      {hover && !result && (
+        <div style={{
+          position: 'absolute',
+          right: '100%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          marginRight: 6,
+          background: 'rgba(0,0,0,0.9)',
+          color: alreadyChecked ? '#4ade80' : '#e2e8f0',
+          fontSize: 10,
+          padding: '3px 8px',
+          borderRadius: 4,
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+        }}>
+          {alreadyChecked
+            ? `${t.checkin.done} (${t.checkin.streak(attendance.streak)})`
+            : `${t.checkin.button} (+10💰)`
+          }
+        </div>
+      )}
+      {result && (
+        <div style={{
+          position: 'absolute',
+          right: '100%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          marginRight: 6,
+          background: 'rgba(0,0,0,0.95)',
+          color: '#4ade80',
+          fontSize: 10,
+          padding: '4px 10px',
+          borderRadius: 6,
+          whiteSpace: 'nowrap',
+          border: '1px solid rgba(74,222,128,0.3)',
+        }}>
+          <div>{t.checkin.reward(result.coins)}</div>
+          <div style={{ fontSize: 9, color: '#94a3b8' }}>{t.checkin.streak(result.streak)}</div>
+          {result.bonus && <div style={{ color: '#fbbf24', fontSize: 9 }}>{t.checkin.bonus}</div>}
         </div>
       )}
     </div>

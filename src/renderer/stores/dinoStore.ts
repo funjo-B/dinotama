@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Dino, DinoEmotion, DinoRarity, DinoSpeciesId, DinoStage, DinoStats, GachaState } from '@shared/types';
-import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MULTIPLIER, SPECIES_DEFS } from '@shared/constants';
+import type { Dino, DinoEmotion, DinoRarity, DinoSpeciesId, DinoStage, DinoStats, GachaState, CoinTransaction, CoinTxType, AttendanceState } from '@shared/types';
+import { GACHA_RATES, PITY_THRESHOLDS, SPECIES_POOL, SELL_PRICES, STAGE_SELL_MULTIPLIER, SPECIES_DEFS, AD_REWARD_COINS } from '@shared/constants';
 
 // Debounced cloud sync — saves after important actions
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -34,6 +34,33 @@ export function hasPendingSync(): boolean {
   return pendingSyncCount > 0;
 }
 
+/** Immediate save for critical actions (gacha, sell, reward) */
+function syncImmediate() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  pendingSyncCount++;
+  (async () => {
+    try {
+      const { syncNow, getCurrentUser } = await import('../services/firebase');
+      const user = getCurrentUser();
+      if (!user) return;
+      const snap = useDinoStore.getState().getSnapshot();
+      await syncNow({
+        uid: user.uid,
+        displayName: user.displayName ?? '',
+        email: user.email ?? '',
+        ...snap,
+        lastSyncTime: Date.now(),
+      });
+      pendingSyncCount = 0;
+    } catch (err) {
+      console.warn('[Sync] Immediate save failed, scheduling retry:', err);
+      scheduleSync(); // Fallback to deferred sync
+    }
+  })();
+}
+
+const MAX_COIN_HISTORY = 100; // 최근 100건만 보관
+
 const DEFAULT_STATS: DinoStats = { hunger: 80, happiness: 80, fatigue: 0 };
 
 interface DinoStore {
@@ -44,6 +71,8 @@ interface DinoStore {
   premiumCurrency: number;
   gacha: GachaState;
   totalSold: number;
+  coinHistory: CoinTransaction[];
+  attendance: AttendanceState;
 
   // Local-only state (not saved)
   activeDino: Dino | null;
@@ -57,13 +86,15 @@ interface DinoStore {
   mergeDinos: (species: DinoSpeciesId, stage: DinoStage) => Dino | null;
   pullGacha: (isPremium: boolean) => Dino | null;
   pullGachaMulti: (count: number, isPremium: boolean) => Dino[];
+  addCoinTx: (type: CoinTxType, amount: number, label: string) => void;
+  dailyCheckin: () => { coins: number; streak: number; bonus: boolean } | null;
   renameDino: (id: string, newName: string) => void;
   sellDino: (id: string) => void;
-  loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number }) => void;
+  loadFromCloud: (data: { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold?: number; coinHistory?: CoinTransaction[]; attendance?: AttendanceState; adRewardUsedToday?: number; lastAdRewardDate?: string }) => void;
   getSnapshot: () => { dinos: Dino[]; activeDinoId: string | null; coins: number; premiumCurrency: number; gacha: GachaState; totalSold: number };
   resetState: () => void;
   // Ad reward
-  grantAdReward: (count: number) => Dino[];
+  grantAdReward: () => number; // returns coins granted
   adRewardUsedToday: number;
   lastAdRewardDate: string;
   useAdReward: () => void;
@@ -146,6 +177,8 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   premiumCurrency: 0,
   gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0, pullsSinceHidden: 0 },
   totalSold: 0,
+  coinHistory: [],
+  attendance: { lastCheckDate: '', streak: 0, totalCheckins: 0 },
   adRewardUsedToday: 0,
   lastAdRewardDate: '',
 
@@ -205,6 +238,67 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
     return evolved;
   },
 
+  addCoinTx: (type, amount, label) => {
+    const state = get();
+    const newBalance = state.coins + amount;
+    const tx: CoinTransaction = {
+      id: crypto.randomUUID(),
+      type,
+      amount,
+      balance: newBalance,
+      label,
+      timestamp: Date.now(),
+    };
+    set({
+      coins: newBalance,
+      coinHistory: [tx, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
+    });
+  },
+
+  dailyCheckin: () => {
+    const state = get();
+    const today = new Date().toISOString().slice(0, 10);
+    if (state.attendance.lastCheckDate === today) return null; // Already checked in
+
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const isConsecutive = state.attendance.lastCheckDate === yesterday;
+    const newStreak = isConsecutive ? state.attendance.streak + 1 : 1;
+
+    const baseReward = 10;
+    const streakBonus = newStreak >= 5 && newStreak % 5 === 0 ? 10 : 0;
+    const totalReward = baseReward + streakBonus;
+
+    const newBalance = state.coins + totalReward;
+
+    const txs: CoinTransaction[] = [];
+    txs.push({
+      id: crypto.randomUUID(),
+      type: 'daily_checkin',
+      amount: baseReward,
+      balance: state.coins + baseReward,
+      label: `출석 ${newStreak}일차`,
+      timestamp: Date.now(),
+    });
+    if (streakBonus > 0) {
+      txs.push({
+        id: crypto.randomUUID(),
+        type: 'streak_bonus',
+        amount: streakBonus,
+        balance: newBalance,
+        label: `${newStreak}일 연속 출석 보너스`,
+        timestamp: Date.now(),
+      });
+    }
+
+    set({
+      coins: newBalance,
+      attendance: { lastCheckDate: today, streak: newStreak, totalCheckins: state.attendance.totalCheckins + 1 },
+      coinHistory: [...txs, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
+    });
+    syncImmediate();
+    return { coins: totalReward, streak: newStreak, bonus: streakBonus > 0 };
+  },
+
   pullGacha: (isPremium) => {
     const state = get();
     const cost = isPremium ? 1 : 10;
@@ -222,15 +316,22 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       pullsSinceHidden: rarity === 'hidden' ? 0 : (state.gacha.pullsSinceHidden ?? 0) + 1,
     };
 
+    const newCoins = isPremium ? state.coins : state.coins - cost;
+    const tx: CoinTransaction = {
+      id: crypto.randomUUID(), type: 'gacha', amount: -cost,
+      balance: newCoins, label: '1회 뽑기', timestamp: Date.now(),
+    };
+
     set({
       dinos: [...state.dinos, newDino],
       gacha: newGacha,
+      coinHistory: [tx, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
       ...(isPremium
         ? { premiumCurrency: state.premiumCurrency - cost }
-        : { coins: state.coins - cost }),
+        : { coins: newCoins }),
     });
 
-    scheduleSync();
+    syncImmediate();
     return newDino;
   },
 
@@ -257,15 +358,22 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       };
     }
 
+    const newCoins = isPremium ? state.coins : state.coins - totalCost;
+    const tx: CoinTransaction = {
+      id: crypto.randomUUID(), type: 'gacha', amount: -totalCost,
+      balance: newCoins, label: `${count}연 뽑기`, timestamp: Date.now(),
+    };
+
     set({
       dinos: [...state.dinos, ...results],
       gacha,
+      coinHistory: [tx, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
       ...(isPremium
         ? { premiumCurrency: state.premiumCurrency - totalCost }
-        : { coins: state.coins - totalCost }),
+        : { coins: newCoins }),
     });
 
-    scheduleSync();
+    syncImmediate();
     return results;
   },
 
@@ -300,15 +408,23 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       newActiveDinoId = newActiveDino?.id ?? null;
     }
 
+    const newCoins = state.coins + price;
+    const specName = SPECIES_DEFS[dino.species]?.nameKo ?? dino.species;
+    const tx: CoinTransaction = {
+      id: crypto.randomUUID(), type: 'sell', amount: price,
+      balance: newCoins, label: `${specName} 판매`, timestamp: Date.now(),
+    };
+
     set({
       dinos: newDinos,
-      coins: state.coins + price,
+      coins: newCoins,
+      coinHistory: [tx, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
       activeDinoId: newActiveDinoId,
       activeDino: newActiveDino,
       totalSold: state.totalSold + 1,
       ...(newActiveDinoId !== state.activeDinoId ? { activeStats: { ...DEFAULT_STATS }, activeEmotion: 'idle' as DinoEmotion } : {}),
     });
-    scheduleSync();
+    syncImmediate();
   },
 
   loadFromCloud: (data) => {
@@ -330,6 +446,10 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       premiumCurrency: data.premiumCurrency,
       gacha: { ...data.gacha, pullsSinceHidden: (data.gacha as any).pullsSinceHidden ?? 0 },
       totalSold: data.totalSold ?? 0,
+      coinHistory: (data as any).coinHistory ?? [],
+      attendance: (data as any).attendance ?? { lastCheckDate: '', streak: 0, totalCheckins: 0 },
+      adRewardUsedToday: (data as any).adRewardUsedToday ?? 0,
+      lastAdRewardDate: (data as any).lastAdRewardDate ?? '',
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
     });
@@ -346,6 +466,10 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       premiumCurrency: s.premiumCurrency,
       gacha: s.gacha,
       totalSold: s.totalSold,
+      coinHistory: s.coinHistory,
+      attendance: s.attendance,
+      adRewardUsedToday: s.adRewardUsedToday,
+      lastAdRewardDate: s.lastAdRewardDate,
     };
   },
 
@@ -358,37 +482,30 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       premiumCurrency: 0,
       gacha: { totalPulls: 0, pullsSinceEpic: 0, pullsSinceLegend: 0, pullsSinceHidden: 0 },
       totalSold: 0,
+      coinHistory: [],
+      attendance: { lastCheckDate: '', streak: 0, totalCheckins: 0 },
+      adRewardUsedToday: 0,
+      lastAdRewardDate: '',
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
     });
   },
 
-  // ── 광고 보상 ─────────────────────────────────────────────────────────────
-  grantAdReward: (count: number) => {
+  // ── 광고 보상 (30코인) ──────────────────────────────────────────────────
+  grantAdReward: () => {
     const state = get();
-    const results: Dino[] = [];
-    let gacha = { ...state.gacha };
-
-    for (let i = 0; i < count; i++) {
-      const rarity = rollRarity(gacha);
-      const dino = createDino(rarity);
-      results.push(dino);
-      gacha = {
-        totalPulls: gacha.totalPulls + 1,
-        pullsSinceEpic: rarity === 'epic' || rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceEpic + 1,
-        pullsSinceLegend: rarity === 'legend' || rarity === 'hidden' ? 0 : gacha.pullsSinceLegend + 1,
-        pullsSinceHidden: rarity === 'hidden' ? 0 : (gacha.pullsSinceHidden ?? 0) + 1,
-      };
-    }
-
+    const reward = AD_REWARD_COINS;
+    const newCoins = state.coins + reward;
+    const tx: CoinTransaction = {
+      id: crypto.randomUUID(), type: 'ad_reward', amount: reward,
+      balance: newCoins, label: '광고 시청 보상', timestamp: Date.now(),
+    };
     set({
-      dinos: [...state.dinos, ...results],
-      gacha,
-      // Coins not deducted — free reward
+      coins: newCoins,
+      coinHistory: [tx, ...state.coinHistory].slice(0, MAX_COIN_HISTORY),
     });
-
-    scheduleSync();
-    return results;
+    syncImmediate();
+    return reward;
   },
 
   useAdReward: () => {
