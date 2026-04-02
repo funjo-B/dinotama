@@ -4,9 +4,20 @@ import { createMainWindow, getMainWindow } from './window';
 import { createTray } from './tray';
 import { registerDeepLink, handleSecondInstance } from './deeplink';
 import { setupAuthIPC } from './auth';
+import path from 'path';
 
 // Load .env for main process (Google OAuth keys, etc.)
-config();
+// In production, look for .env next to the executable
+if (app.isPackaged) {
+  config({ path: path.join(process.resourcesPath, '.env') });
+} else {
+  config();
+}
+
+// Fix GPU sandbox crash on Windows (Electron 28+ packaged apps)
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+// Fallback: if GPU still fails, allow software rendering
+app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer');
 
 // Register deep link protocol
 registerDeepLink();

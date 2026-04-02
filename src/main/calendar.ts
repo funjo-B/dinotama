@@ -1,10 +1,12 @@
 import { google } from 'googleapis';
 import { getMainWindow } from './window';
-import { createOAuth2Client, getSavedTokens } from './auth';
+import { createOAuth2Client, getSavedTokens, updateSavedTokens } from './auth';
 import { CALENDAR_CHECK_INTERVAL_MS, NOTIFICATION_BEFORE_MS } from '../shared/constants/gacha';
 
 let calendarInterval: ReturnType<typeof setInterval> | null = null;
 let notifiedEventIds = new Set<string>();
+let authFailCount = 0;
+const MAX_AUTH_RETRIES = 3;
 
 /* ─── Authenticated Client ─── */
 function getAuthenticatedClient() {
@@ -18,10 +20,15 @@ function getAuthenticatedClient() {
     expiry_date: tokens.expiry_date,
   });
 
-  // Auto-refresh: update stored tokens when Google refreshes them
-  // (auth.ts store handles persistence via getSavedTokens/setSavedTokens pattern)
+  // Auto-refresh: persist refreshed tokens to electron-store
   oauth2Client.on('tokens', (newTokens) => {
-    console.log('[Calendar] Tokens auto-refreshed by googleapis');
+    console.log('[Calendar] Tokens auto-refreshed, saving...');
+    updateSavedTokens({
+      access_token: newTokens.access_token ?? undefined,
+      refresh_token: newTokens.refresh_token ?? undefined,
+      id_token: newTokens.id_token ?? undefined,
+      expiry_date: newTokens.expiry_date ?? undefined,
+    });
   });
 
   return oauth2Client;
@@ -47,6 +54,7 @@ async function checkUpcomingEvents() {
     });
 
     const events = response.data.items ?? [];
+    authFailCount = 0; // Reset on successful fetch
 
     for (const event of events) {
       if (!event.id || notifiedEventIds.has(event.id)) continue;
@@ -77,9 +85,17 @@ async function checkUpcomingEvents() {
       notifiedEventIds = new Set(arr.slice(-50));
     }
   } catch (err: any) {
-    if (err.code === 401 || err.code === 403) {
-      console.error('[Calendar] Auth expired, stopping polling...');
-      stopCalendarPolling();
+    if (err.code === 401 || err.code === 403 || err.status === 401 || err.status === 403) {
+      authFailCount++;
+      console.error(`[Calendar] Auth error (attempt ${authFailCount}/${MAX_AUTH_RETRIES})`);
+
+      if (authFailCount >= MAX_AUTH_RETRIES) {
+        console.error('[Calendar] Max retries reached, stopping polling. Re-login required.');
+        stopCalendarPolling();
+        // Notify renderer that calendar auth failed
+        const win = getMainWindow();
+        win?.webContents.send('dino:calendar-auth-expired');
+      }
       return;
     }
     console.error('[Calendar] Failed to fetch events:', err.message);
@@ -116,7 +132,13 @@ export async function fetchEventsForDay(dayOffset = 0): Promise<CalendarEvent[]>
       location: event.location ?? undefined,
     }));
   } catch (err: any) {
-    console.error('[Calendar] Failed to fetch events:', err.message);
+    if (err.code === 401 || err.code === 403 || err.status === 401 || err.status === 403) {
+      console.error('[Calendar] Auth expired for day fetch');
+      const win = getMainWindow();
+      win?.webContents.send('dino:calendar-auth-expired');
+    } else {
+      console.error('[Calendar] Failed to fetch events:', err.message);
+    }
     return [];
   }
 }

@@ -37,6 +37,29 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let syncInterval: ReturnType<typeof setInterval> | null = null;
+let syncInProgress = false;
+
+/* ─── Retry helper ─── */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+  maxRetries = 2,
+  delayMs = 1000,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < maxRetries) {
+        console.warn(`[Firebase] ${label} failed (attempt ${attempt + 1}), retrying in ${delayMs}ms...`);
+        await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
 
 /** Sign in with Google OAuth credential (from Electron deep link flow) */
 export async function signInWithGoogle(idToken: string): Promise<User> {
@@ -55,41 +78,54 @@ export function getCurrentUser(): User | null {
   return auth.currentUser;
 }
 
-/** Save user data to Firestore */
+/** Save user data to Firestore (with retry) */
 export async function saveUserData(userData: UserData): Promise<void> {
   const uid = userData.uid || auth.currentUser?.uid;
   if (!uid) return;
 
-  await setDoc(doc(db, 'users', uid), {
-    ...userData,
-    lastSyncTime: Date.now(),
-    updatedAt: serverTimestamp(),
-  }, { merge: true });
+  await withRetry(
+    () => setDoc(doc(db, 'users', uid), {
+      ...userData,
+      lastSyncTime: Date.now(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true }),
+    'saveUserData',
+  );
   console.log('[Firebase] Data saved for', uid);
 }
 
-/** Load user data from Firestore */
+/** Load user data from Firestore (with retry) */
 export async function loadUserData(uid?: string): Promise<UserData | null> {
   const resolvedUid = uid || auth.currentUser?.uid;
   if (!resolvedUid) return null;
 
-  const snapshot = await getDoc(doc(db, 'users', resolvedUid));
+  const snapshot = await withRetry(
+    () => getDoc(doc(db, 'users', resolvedUid)),
+    'loadUserData',
+  );
   if (!snapshot.exists()) return null;
 
   console.log('[Firebase] Data loaded for', resolvedUid);
   return snapshot.data() as UserData;
 }
 
-/** Start periodic sync (30 min) */
+/** Start periodic sync (30 min) with duplicate guard */
 export function startAutoSync(getLatestData: () => UserData) {
   stopAutoSync();
   syncInterval = setInterval(async () => {
+    if (syncInProgress) {
+      console.warn('[Firebase] Auto-sync skipped — previous sync still running');
+      return;
+    }
+    syncInProgress = true;
     try {
       const data = getLatestData();
       await saveUserData(data);
       console.log('[Firebase] Auto-sync complete');
     } catch (err) {
-      console.error('[Firebase] Auto-sync failed:', err);
+      console.error('[Firebase] Auto-sync failed after retries:', err);
+    } finally {
+      syncInProgress = false;
     }
   }, SYNC_INTERVAL_MS);
 }
@@ -107,19 +143,25 @@ export async function syncNow(userData: UserData): Promise<void> {
   await saveUserData(userData);
 }
 
-/** Save todos to Firestore (separate doc to avoid UserData conflicts) */
+/** Save todos to Firestore (with retry) */
 export async function saveTodosToCloud(uid: string, todos: TodoItem[]): Promise<void> {
-  await setDoc(
-    doc(db, 'users', uid, 'data', 'todos'),
-    { items: todos, updatedAt: serverTimestamp() },
-    { merge: false }
+  await withRetry(
+    () => setDoc(
+      doc(db, 'users', uid, 'data', 'todos'),
+      { items: todos, updatedAt: serverTimestamp() },
+      { merge: false },
+    ),
+    'saveTodos',
   );
   console.log('[Firebase] Todos saved:', todos.length, 'items');
 }
 
-/** Load todos from Firestore */
+/** Load todos from Firestore (with retry) */
 export async function loadTodosFromCloud(uid: string): Promise<TodoItem[] | null> {
-  const snap = await getDoc(doc(db, 'users', uid, 'data', 'todos'));
+  const snap = await withRetry(
+    () => getDoc(doc(db, 'users', uid, 'data', 'todos')),
+    'loadTodos',
+  );
   if (!snap.exists()) return null;
   const data = snap.data();
   return Array.isArray(data.items) ? data.items : null;

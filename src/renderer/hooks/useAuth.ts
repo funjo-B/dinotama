@@ -36,6 +36,8 @@ export function useAuth() {
       const { auth, saveUserData, stopAutoSync } = firebaseModule;
       const snap = useDinoStore.getState().getSnapshot();
       const currentUser = auth.currentUser;
+
+      let saveFailed = false;
       if (currentUser && snap.dinos.length > 0) {
         try {
           await saveUserData({
@@ -46,11 +48,21 @@ export function useAuth() {
             lastSyncTime: Date.now(),
           });
         } catch (err: unknown) {
-          console.warn('[Auth] Save before logout failed:', err);
+          console.error('[Auth] Save before logout failed:', err);
+          saveFailed = true;
         }
       }
+
+      if (saveFailed) {
+        console.warn('[Auth] Proceeding with logout despite save failure — local data preserved in store');
+      }
+
       stopAutoSync();
-      await auth.signOut();
+      try {
+        await auth.signOut();
+      } catch (err: unknown) {
+        console.error('[Auth] Firebase signOut failed:', err);
+      }
       useDinoStore.getState().resetState();
       console.log('[Auth] Logged out, state reset');
     };

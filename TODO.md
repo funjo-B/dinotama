@@ -122,6 +122,13 @@
 - **담당**: game-agent / asset-agent
 
 #### 로그인/동기화 안정화
+- [x] OAuth 토큰 갱신 시 electron-store 저장 (calendar.ts)
+- [x] 캘린더 401/403 에러 복구 (3회 재시도 + renderer 알림)
+- [x] Firestore CRUD 재시도 로직 (withRetry, exponential backoff)
+- [x] Auto-sync 중복 실행 방지 (syncInProgress 가드)
+- [x] 로그아웃 시 저장 실패 안전 처리
+- [x] 앱 시작 인증 복원: 3초 하드코딩 → did-finish-load 이벤트 기반
+- [x] 프로덕션 빌드 실행 안 되는 문제 수정 (GPU 샌드박스 + .env 미포함)
 - [ ] Firebase Firestore E2E 테스트 (TODO 클라우드 저장/불러오기 검증)
 - [ ] Firestore 보안 규칙 — `users/{uid}/data/todos` 읽기/쓰기 허용 확인
 - [ ] 트레이 로그아웃→재로그인 플로우 최종 확인
@@ -146,7 +153,8 @@
 
 - [ ] ESLint / Prettier 설정 (.eslintrc.js + .prettierrc)
 - [ ] growthFSM / dinoStore / 가챠 확률 단위 테스트 (Vitest)
-- [ ] Firebase 동기화 실패 시 재시도 + 에러 UI
+- [x] Firebase 동기화 실패 시 재시도 (withRetry 적용 완료)
+- [ ] Firebase 동기화 실패 시 에러 UI
 
 ### 🔵 4순위 — 빌드 & 배포
 
@@ -170,8 +178,9 @@
 - **UI 구조**: ✅ 공룡 창(320x280) + 패널(별도 BrowserWindow), 배경 토글
 - **다국어**: ✅ 한국어/영어 전환, 모든 UI 문자열 i18n 적용
 - **환경설정**: ✅ 언어, 알람 간격, 배경 on/off
-- **Firebase**: ✅ 인증 + Firestore 동기화 (공룡 + TODO)
-- **Calendar**: ✅ 날짜 네비게이션 (이전/다음 날), 알림 팝업
+- **Firebase**: ✅ 인증 + Firestore 동기화 (공룡 + TODO) + 재시도 로직
+- **Calendar**: ✅ 날짜 네비게이션 (이전/다음 날), 알림 팝업, 토큰 갱신 저장
+- **빌드**: ✅ Windows NSIS 패키징 실행 확인 (GPU 샌드박스 + .env 포함)
 - **TODO**: ✅ 클라우드 동기화, 매일 체크 초기화, 알람 간격 설정
 - **문서**: ✅ 스프라이트 제작 가이드 (docs/sprite-guide.md)
 - **Stripe**: ⚠️ 스캐폴드만

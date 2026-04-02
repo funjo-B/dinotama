@@ -58,9 +58,15 @@ export interface AuthTokens {
   expiry_date?: number;
 }
 
-/* ─── Public: get saved tokens ─── */
+/* ─── Public: get/set saved tokens ─── */
 export function getSavedTokens(): AuthTokens | undefined {
   return getStore().get('authTokens');
+}
+
+export function updateSavedTokens(partial: Partial<AuthTokens>) {
+  const existing = getSavedTokens();
+  if (!existing) return;
+  getStore().set('authTokens', { ...existing, ...partial });
 }
 
 /* ─── IPC Setup ─── */
@@ -104,15 +110,40 @@ export function setupAuthIPC() {
   if (saved) {
     console.log('[Auth] Found saved tokens, restoring session...');
     startCalendarPolling();
-    // Notify renderer to sign in with Firebase
-    const win = getMainWindow();
-    // Window may not be ready yet, defer
-    setTimeout(() => {
+
+    // Wait for renderer to be ready before sending auth-restored
+    const sendAuthRestored = () => {
       const w = getMainWindow();
-      w?.webContents.send('dino:auth-restored', {
-        idToken: saved.id_token,
-      });
-    }, 3000);
+      if (!w) return;
+      w.webContents.send('dino:auth-restored', { idToken: saved.id_token });
+      console.log('[Auth] Sent auth-restored to renderer');
+    };
+
+    const win = getMainWindow();
+    if (win?.webContents.isLoading()) {
+      win.webContents.once('did-finish-load', sendAuthRestored);
+    } else if (win) {
+      // Already loaded (unlikely at startup, but safe)
+      sendAuthRestored();
+    } else {
+      // Window not created yet — poll briefly
+      let attempts = 0;
+      const waitForWindow = setInterval(() => {
+        attempts++;
+        const w = getMainWindow();
+        if (w) {
+          clearInterval(waitForWindow);
+          if (w.webContents.isLoading()) {
+            w.webContents.once('did-finish-load', sendAuthRestored);
+          } else {
+            sendAuthRestored();
+          }
+        } else if (attempts > 30) { // 30 * 200ms = 6s max
+          clearInterval(waitForWindow);
+          console.error('[Auth] Window never became available for auth restore');
+        }
+      }, 200);
+    }
   }
 }
 

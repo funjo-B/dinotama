@@ -1,6 +1,6 @@
 export type DinoStage = 'egg' | 'baby' | 'teen' | 'adult';
 
-export type DinoEmotion = 'idle' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited';
+export type DinoEmotion = 'idle' | 'idle1' | 'idle2' | 'idle3' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited';
 
 export type DinoRarity = 'common' | 'rare' | 'epic' | 'legend' | 'hidden';
 

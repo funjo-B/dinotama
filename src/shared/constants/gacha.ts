@@ -27,6 +27,15 @@ export const STAT_DECAY_RATE = {
   fatigue: 1,     // per hour (increases)
 } as const;
 
+// Rarity → number of action buttons available
+export const RARITY_ACTION_COUNT: Record<DinoRarity, number> = {
+  common: 1,
+  rare: 2,
+  epic: 3,
+  legend: 4,
+  hidden: 5,
+};
+
 export const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 export const CALENDAR_CHECK_INTERVAL_MS = 60 * 1000; // 1 minute
 export const NOTIFICATION_BEFORE_MS = 5 * 60 * 1000; // 5 minutes before event

@@ -10,6 +10,24 @@ const EMOTION_ANIMATIONS: Record<DinoEmotion, TargetAndTransition> = {
     y: [0, -4, 0],
     transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
   },
+  idle1: {
+    // Stretch / yawn
+    scale: [1, 1.05, 1.08, 1.02, 1],
+    y: [0, -2, -4, -2, 0],
+    transition: { duration: 2, repeat: 0, ease: 'easeInOut' },
+  },
+  idle2: {
+    // Look around
+    rotate: [0, -8, 0, 8, 0],
+    y: [0, -2, 0, -2, 0],
+    transition: { duration: 1.8, repeat: 0, ease: 'easeInOut' },
+  },
+  idle3: {
+    // Little hop
+    y: [0, -6, 0, -10, 0, -3, 0],
+    scale: [1, 1.02, 1, 1.04, 1, 1.01, 1],
+    transition: { duration: 1.5, repeat: 0, ease: 'easeInOut' },
+  },
   happy: {
     y: [0, -10, 0],
     scale: [1, 1.1, 1],
@@ -44,7 +62,8 @@ export function DinoCanvas() {
   const [frame, setFrame] = useState(1);
   useEffect(() => {
     if (!activeDino) return;
-    const frameCount = SPRITE_FRAME_COUNTS[`${activeDino.species}_${emotion}`] ?? 1;
+    const se = emotion.startsWith('idle') ? 'idle' : emotion;
+    const frameCount = SPRITE_FRAME_COUNTS[`${activeDino.species}_${se}`] ?? 1;
     if (frameCount <= 1) { setFrame(1); return; }
     setFrame(1);
     const interval = setInterval(() => {
@@ -54,6 +73,8 @@ export function DinoCanvas() {
   }, [activeDino?.species, emotion]);
 
   const frameStr = String(frame).padStart(2, '0');
+  // idle variants use 'idle' sprite
+  const spriteEmotion = emotion.startsWith('idle') ? 'idle' : emotion;
 
   return (
     <AnimatePresence mode="wait">
@@ -70,7 +91,7 @@ export function DinoCanvas() {
       >
         {activeDino ? (
           <img
-            src={`./assets/sprites/${activeDino.stage}/${activeDino.species}/sprite_${activeDino.stage}_${emotion}_${frameStr}.png`}
+            src={`./assets/sprites/${activeDino.stage}/${activeDino.species}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`}
             alt={activeDino.name}
             width={128}
             height={128}
@@ -78,7 +99,7 @@ export function DinoCanvas() {
             draggable={false}
             onError={(e) => {
               // Fallback to legacy rarity-based sprite
-              const fallback = `./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${emotion}_${frameStr}.png`;
+              const fallback = `./assets/sprites/${activeDino.stage}/${activeDino.rarity}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`;
               if ((e.target as HTMLImageElement).src !== fallback) {
                 (e.target as HTMLImageElement).src = fallback;
               }

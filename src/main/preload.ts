@@ -62,6 +62,12 @@ const dinoAPI = {
     return () => ipcRenderer.removeListener('dino:calendar-notify', handler);
   },
 
+  onCalendarAuthExpired: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('dino:calendar-auth-expired', handler);
+    return () => ipcRenderer.removeListener('dino:calendar-auth-expired', handler);
+  },
+
   onAuthSuccess: (callback: (data: { idToken: string }) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data as { idToken: string });
     ipcRenderer.on('dino:auth-success', handler);

@@ -354,9 +354,22 @@ function DinoApp() {
         </div>
       )}
 
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* Action buttons — pinned to bottom of window */}
+      {activeDino && <ActionBar />}
+
+      <div
+        style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+        onClick={() => {
+          const emo = useDinoStore.getState().activeEmotion;
+          if (emo === 'idle' || emo.startsWith('idle')) {
+            const variants: import('@shared/types').DinoEmotion[] = ['idle1', 'idle2', 'idle3'];
+            const pick = variants[Math.floor(Math.random() * variants.length)];
+            useDinoStore.getState().setActiveEmotion(pick);
+            setTimeout(() => useDinoStore.getState().setActiveEmotion('idle'), 2000);
+          }
+        }}
+      >
         <DinoCanvas />
-        {activeDino && <ActionBar />}
         {renameMode && activeDino && (
           <div style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
             <input
@@ -397,39 +410,87 @@ const tabBtnBase: React.CSSProperties = {
   position: 'relative',
 };
 
-// ─── 감정 액션 버튼 ──────────────────────────────────────────────────────────
-const ACTIONS: { icon: string; label: string; emotion: import('@shared/types').DinoEmotion; duration: number }[] = [
-  { icon: '🍖', label: '먹이기',   emotion: 'happy',   duration: 4000 },
-  { icon: '🎮', label: '놀아주기', emotion: 'excited', duration: 5000 },
-  { icon: '🤗', label: '쓰다듬기', emotion: 'happy',   duration: 3000 },
-  { icon: '😴', label: '재우기',   emotion: 'sleepy',  duration: 5000 },
+// ─── 감정 액션 버튼 (등급별 차등) ───────────────────────────────────────────
+import { RARITY_ACTION_COUNT } from '@shared/constants';
+
+const ALL_ACTIONS: { icon: string; labelKey: string; emotion: import('@shared/types').DinoEmotion; duration: number }[] = [
+  { icon: '🍖', labelKey: '먹이기',   emotion: 'happy',   duration: 4000 },
+  { icon: '🎮', labelKey: '놀아주기', emotion: 'excited', duration: 5000 },
+  { icon: '🤗', labelKey: '쓰다듬기', emotion: 'happy',   duration: 3000 },
+  { icon: '😴', labelKey: '재우기',   emotion: 'sleepy',  duration: 5000 },
+  { icon: '💃', labelKey: '춤추기',   emotion: 'excited', duration: 6000 },
 ];
 
-function ActionBar() {
-  const setActiveEmotion = useDinoStore((s) => s.setActiveEmotion);
-  const activeEmotion    = useDinoStore((s) => s.activeEmotion);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const IDLE_VARIANTS: import('@shared/types').DinoEmotion[] = ['idle1', 'idle2', 'idle3'];
 
-  const trigger = useCallback((emotion: import('@shared/types').DinoEmotion, duration: number) => {
+function ActionBar() {
+  const activeDino = useDinoStore((s) => s.activeDino);
+  const setActiveEmotion = useDinoStore((s) => s.setActiveEmotion);
+  const activeEmotion = useDinoStore((s) => s.activeEmotion);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const rarity = activeDino?.rarity ?? 'common';
+  const actionCount = RARITY_ACTION_COUNT[rarity] ?? 1;
+  const actions = ALL_ACTIONS.slice(0, actionCount);
+
+  const triggerAction = useCallback((emotion: import('@shared/types').DinoEmotion, duration: number) => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     setActiveEmotion(emotion);
     timerRef.current = setTimeout(() => setActiveEmotion('idle'), duration);
   }, [setActiveEmotion]);
+
+  // Random idle variant cycling
+  const triggerRandomIdle = useCallback(() => {
+    const variant = IDLE_VARIANTS[Math.floor(Math.random() * IDLE_VARIANTS.length)];
+    setActiveEmotion(variant);
+    // Return to idle after animation (1.5~2.5s)
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setActiveEmotion('idle'), 2000);
+  }, [setActiveEmotion]);
+
+  // Auto idle cycling: random interval 8~20 seconds
+  useEffect(() => {
+    function scheduleIdle() {
+      const delay = 8000 + Math.random() * 12000;
+      idleTimerRef.current = setTimeout(() => {
+        const emo = useDinoStore.getState().activeEmotion;
+        // Only trigger if currently in idle state
+        if (emo === 'idle') {
+          triggerRandomIdle();
+        }
+        idleTimerRef.current = scheduleIdle();
+      }, delay);
+      return idleTimerRef.current;
+    }
+    idleTimerRef.current = scheduleIdle();
+    return () => { if (idleTimerRef.current) clearTimeout(idleTimerRef.current); };
+  }, [triggerRandomIdle]);
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
-      style={{ display: 'flex', gap: 6, marginTop: 6 }}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'absolute',
+        bottom: 5,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: 6,
+        zIndex: 100,
+      }}
     >
-      {ACTIONS.map(({ icon, label, emotion, duration }) => {
+      {actions.map(({ icon, labelKey, emotion, duration }) => {
         const active = activeEmotion === emotion;
         return (
           <button
-            key={label}
-            title={label}
-            onClick={() => trigger(emotion, duration)}
+            key={labelKey}
+            title={labelKey}
+            onClick={() => triggerAction(emotion, duration)}
             style={{
               background: active ? 'rgba(255,255,255,0.18)' : 'rgba(15,15,25,0.75)',
               border: `1px solid ${active ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.12)'}`,
