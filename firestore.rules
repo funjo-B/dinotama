@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 기본: 모든 접근 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 유저 데이터 — 본인만 읽기/쓰기
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // 하위 문서 (todos 등)
+      match /data/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // 보상 토큰 — Cloud Functions만 쓰기, 인증된 유저만 읽기
+    match /rewardTokens/{nonce} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // 보상 클레임 — 본인 것만 읽기, Cloud Functions만 쓰기
+    match /rewardClaims/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+
+      match /daily/{date} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+  }
+}

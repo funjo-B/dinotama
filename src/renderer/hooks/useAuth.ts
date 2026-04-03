@@ -65,6 +65,7 @@ export function useAuth() {
         console.error('[Auth] Firebase signOut failed:', err);
       }
       useDinoStore.getState().resetState();
+      loadedUid = null; // 재로그인 시 클라우드 데이터 다시 로드되도록 초기화
       console.log('[Auth] Logged out, state reset');
     };
 
@@ -122,6 +123,7 @@ export function useAuth() {
               }
             } catch (err) {
               console.warn('[Auth] Failed to load cloud data:', err);
+              useDinoStore.setState({ syncStatus: 'error', syncError: '클라우드 데이터 로드 실패' });
             }
 
             startAutoSync(() => {

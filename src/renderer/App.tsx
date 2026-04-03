@@ -18,6 +18,7 @@ import { GachaPanel } from './components/GachaPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { useSettingsStore } from './stores/settingsStore';
 import { useT, useSpeciesName } from './hooks/useT';
+import { SyncStatusIndicator } from './components/SyncStatusIndicator';
 
 const TODO_STORAGE_KEY = 'dinotama-todos';
 const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
@@ -395,6 +396,7 @@ function DinoApp() {
 
       <NotificationPopup event={currentEvent} onOk={handleOk} onSnooze={handleSnooze} />
       <TodoReminder message={todoReminder} onOk={handleTodoOk} onSnooze={handleTodoSnooze} />
+      {user && <SyncStatusIndicator />}
       <GachaAnimation dino={gachaAnimating ? gachaResult : null} onComplete={handleGachaComplete} />
       {gachaMultiResults.length > 0 && (
         <GachaMultiAnimation key={multiPullKey} dinos={gachaMultiResults} onComplete={() => setGachaMultiResults([])} />

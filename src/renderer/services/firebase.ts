@@ -133,18 +133,25 @@ export function startAutoSync(getLatestData: () => UserData) {
       console.log('[Firebase] Auto-sync complete');
     } catch (err) {
       console.error('[Firebase] Auto-sync failed after retries:', err);
+      // Renderer에 에러 전파 (동적 import 방지 — 이미 같은 모듈)
+      try {
+        const { useDinoStore } = await import('../stores/dinoStore');
+        useDinoStore.setState({ syncStatus: 'error', syncError: '자동 동기화 실패' });
+      } catch { /* store 접근 불가 시 무시 */ }
     } finally {
       syncInProgress = false;
     }
   }, SYNC_INTERVAL_MS);
 }
 
-/** Stop periodic sync */
+/** Stop periodic sync + 상태 초기화 (로그아웃 시 호출) */
 export function stopAutoSync() {
   if (syncInterval) {
     clearInterval(syncInterval);
     syncInterval = null;
   }
+  syncInProgress = false;
+  lastSyncHash = '';
 }
 
 /** Immediate sync (on important events) */

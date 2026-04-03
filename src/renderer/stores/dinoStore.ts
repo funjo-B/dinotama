@@ -10,10 +10,11 @@ function scheduleSync() {
   pendingSyncCount++;
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
+    useDinoStore.setState({ syncStatus: 'syncing' });
     try {
       const { syncNow, getCurrentUser } = await import('../services/firebase');
       const user = getCurrentUser();
-      if (!user) return;
+      if (!user) { useDinoStore.setState({ syncStatus: 'idle' }); return; }
       const snap = useDinoStore.getState().getSnapshot();
       await syncNow({
         uid: user.uid,
@@ -23,8 +24,10 @@ function scheduleSync() {
         lastSyncTime: Date.now(),
       });
       pendingSyncCount = 0;
+      useDinoStore.setState({ syncStatus: 'success', syncError: null });
     } catch (err) {
       console.warn('[Sync] Auto-save failed:', err);
+      useDinoStore.setState({ syncStatus: 'error', syncError: err instanceof Error ? err.message : '동기화 실패' });
     }
   }, 2000);
 }
@@ -38,11 +41,12 @@ export function hasPendingSync(): boolean {
 function syncImmediate() {
   if (syncTimeout) clearTimeout(syncTimeout);
   pendingSyncCount++;
+  useDinoStore.setState({ syncStatus: 'syncing' });
   (async () => {
     try {
       const { syncNow, getCurrentUser } = await import('../services/firebase');
       const user = getCurrentUser();
-      if (!user) return;
+      if (!user) { useDinoStore.setState({ syncStatus: 'idle' }); return; }
       const snap = useDinoStore.getState().getSnapshot();
       await syncNow({
         uid: user.uid,
@@ -52,8 +56,10 @@ function syncImmediate() {
         lastSyncTime: Date.now(),
       });
       pendingSyncCount = 0;
+      useDinoStore.setState({ syncStatus: 'success', syncError: null });
     } catch (err) {
       console.warn('[Sync] Immediate save failed, scheduling retry:', err);
+      useDinoStore.setState({ syncStatus: 'error', syncError: err instanceof Error ? err.message : '동기화 실패' });
       scheduleSync(); // Fallback to deferred sync
     }
   })();
@@ -78,6 +84,8 @@ interface DinoStore {
   activeDino: Dino | null;
   activeStats: DinoStats;
   activeEmotion: DinoEmotion;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  syncError: string | null;
 
   // Actions
   setActiveDino: (id: string) => void;
@@ -185,6 +193,8 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   // Local-only
   activeStats: { ...DEFAULT_STATS },
   activeEmotion: 'idle',
+  syncStatus: 'idle',
+  syncError: null,
 
   setActiveDino: (id) => {
     const dino = get().dinos.find((d) => d.id === id) ?? null;
@@ -474,6 +484,10 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
   },
 
   resetState: () => {
+    // 모듈 레벨 sync 상태 정리 — 로그아웃 후 stale sync 방지
+    if (syncTimeout) { clearTimeout(syncTimeout); syncTimeout = null; }
+    pendingSyncCount = 0;
+
     set({
       dinos: [],
       activeDinoId: null,
@@ -488,6 +502,8 @@ export const useDinoStore = create<DinoStore>((set, get) => ({
       lastAdRewardDate: '',
       activeStats: { ...DEFAULT_STATS },
       activeEmotion: 'idle',
+      syncStatus: 'idle',
+      syncError: null,
     });
   },
 

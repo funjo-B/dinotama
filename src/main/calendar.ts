@@ -16,7 +16,11 @@ let cachedClient: Auth.OAuth2Client | null = null;
 
 function getAuthenticatedClient() {
   const tokens = getSavedTokens();
-  if (!tokens) { cachedClient = null; return null; }
+  if (!tokens) {
+    if (cachedClient) { cachedClient.removeAllListeners('tokens'); }
+    cachedClient = null;
+    return null;
+  }
 
   // Reuse cached client if still valid
   if (cachedClient) {
@@ -80,6 +84,9 @@ async function ensureFreshToken() {
 }
 
 export function resetCachedClient() {
+  if (cachedClient) {
+    cachedClient.removeAllListeners('tokens');
+  }
   cachedClient = null;
 }
 
@@ -186,6 +193,7 @@ export async function fetchEventsForDay(dayOffset = 0): Promise<CalendarEvent[]>
     if (err.code === 401 || err.code === 403 || err.status === 401 || err.status === 403) {
       console.error('[Calendar] Auth expired for day fetch, attempting refresh...');
       // Try once more after forcing a token refresh
+      if (cachedClient) { cachedClient.removeAllListeners('tokens'); }
       cachedClient = null;
       try {
         await ensureFreshToken();
@@ -238,6 +246,10 @@ export function stopCalendarPolling() {
     clearInterval(calendarInterval);
     calendarInterval = null;
   }
+  authFailCount = 0; // 재로그인 시 카운터 초기화
   notifiedEventIds.clear();
+  if (cachedClient) {
+    cachedClient.removeAllListeners('tokens');
+  }
   cachedClient = null;
 }
