@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DinoTama - 공룡 도감</title>
+  <meta name="description" content="DinoTama 공룡 도감. 41종 공룡의 정보, 레어도, 식성, 성체 이미지를 확인하세요.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #16213e 100%);
+      color: #cbd5e1;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Layout */
+    .page { display: flex; max-width: 1100px; margin: 0 auto; min-height: 100vh; }
+    .main { flex: 1; padding: 20px; min-width: 0; }
+    .sidebar {
+      width: 200px;
+      padding: 20px 12px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    @media (max-width: 800px) {
+      .page { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; padding: 10px 20px; }
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 32px 0 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 24px;
+    }
+    .header h1 { font-size: 24px; color: #fbbf24; margin-bottom: 4px; }
+    .header p { font-size: 13px; color: #94a3b8; }
+    .back { display: inline-block; margin-bottom: 8px; color: #60a5fa; font-size: 13px; text-decoration: none; }
+
+    /* Filter */
+    .filter {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      color: #94a3b8;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { background: rgba(255,255,255,0.08); }
+    .filter-btn.active { border-color: var(--rc); color: var(--rc); background: rgba(255,255,255,0.08); }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 20px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .stats-bar span { font-weight: 600; color: #94a3b8; }
+
+    /* Dino grid */
+    .dino-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 12px;
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px 10px;
+    }
+    .card-sprites {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .card-sprite {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .card-sprite img {
+      width: 60px;
+      height: 60px;
+      image-rendering: pixelated;
+    }
+    .card-sprite .stage-label {
+      font-size: 8px;
+      color: #64748b;
+      position: absolute;
+      bottom: 2px;
+    }
+    /* Hover tooltip preview */
+    .card-sprite {
+      cursor: pointer;
+    }
+    .sprite-preview {
+      display: none;
+      position: fixed;
+      width: 180px;
+      height: 180px;
+      background: rgba(15, 15, 25, 0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      z-index: 9999;
+      pointer-events: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .sprite-preview img {
+      width: 150px;
+      height: 150px;
+      image-rendering: pixelated;
+    }
+    .sprite-preview .preview-label {
+      position: absolute;
+      bottom: 6px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    .card-info { flex: 1; min-width: 0; }
+    .card-name { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+    .card-name-en { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .card-badges { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .badge-rarity { border: 1px solid; }
+    .badge-diet {
+      background: rgba(255,255,255,0.06);
+      color: #94a3b8;
+    }
+
+    /* Card description */
+    .card-desc {
+      padding: 0 16px 14px;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* Transform badge */
+    .transform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(255, 69, 0, 0.15);
+      color: #ff6b6b;
+      border: 1px solid rgba(255, 69, 0, 0.3);
+    }
+
+    /* Sidebar ad */
+    .ad-slot {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .ad-slot p { font-size: 10px; color: #475569; }
+
+    /* Rarity colors */
+    .rc-common { --rc: #9ca3af; }
+    .rc-rare { --rc: #60a5fa; }
+    .rc-epic { --rc: #c084fc; }
+    .rc-legend { --rc: #fbbf24; }
+    .rc-hidden { --rc: #ff6b6b; }
+
+    /* Diet icons */
+    .diet-icon { font-size: 12px; }
+
+    /* Count badge */
+    .count { font-size: 11px; color: #64748b; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<div class="sprite-preview" id="spritePreview">
+  <img id="previewImg" src="" alt="" />
+  <div class="preview-label" id="previewLabel"></div>
+</div>
+
+<div class="page">
+  <div class="main">
+    <div class="header">
+      <a href="/" class="back">&larr; DinoTama 홈으로</a>
+      <h1>🦕 공룡 도감</h1>
+      <p>41종 공룡의 정보를 확인하세요</p>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter" id="filter"></div>
+    <div class="stats-bar" id="statsBar"></div>
+
+    <!-- Grid -->
+    <div class="dino-grid" id="dinoGrid"></div>
+  </div>
+
+  <!-- Sidebar (ads) -->
+  <div class="sidebar">
+    <div class="ad-slot">
+      <p>광고 영역</p>
+      <p style="margin-top:4px; font-size:9px;">AdSense 승인 후 표시</p>
+      <!--
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-XXXXXXXX"
+          data-ad-slot="XXXXXXXX"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+    </div>
+    <div class="ad-slot">
+      <p>광고 영역</p>
+      <!--
+        <ins class="adsbygoogle" ... ></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      -->
+    </div>
+
+    <div style="margin-top: 20px; font-size: 11px; color: #475569;">
+      <p><a href="/guide.html" style="color: #60a5fa; text-decoration: none;">사용 가이드</a></p>
+      <p style="margin-top: 4px;"><a href="/" style="color: #60a5fa; text-decoration: none;">메인 페이지</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const DIET_LABELS = { herbivore: '🌿 초식', carnivore: '🍖 육식', flyer: '🦅 비행', aquatic: '🌊 수중', special: '✦ 특수' };
+const RARITY_ORDER = ['common', 'rare', 'epic', 'legend', 'hidden'];
+const RARITY_LABELS = { common: '★ Common', rare: '★★ Rare', epic: '★★★ Epic', legend: '★★★★ Legend', hidden: '✦ Hidden' };
+const RARITY_COLORS = { common: '#9ca3af', rare: '#60a5fa', epic: '#c084fc', legend: '#fbbf24', hidden: '#ff6b6b' };
+
+const SPECIES = [
+  // COMMON (11)
+  { id: 'gallimimus', ko: '갈리미무스', en: 'Gallimimus', rarity: 'common', diet: 'herbivore',
+    desc: '민첩한 초식 공룡으로 가늘고 긴 다리로 빠르게 달린다. 백악기 후기 몽골에서 발견되었으며, 벌레와 식물을 모두 먹었을 것으로 추정된다.' },
+  { id: 'coelophysis', ko: '코엘로피시스', en: 'Coelophysis', rarity: 'common', diet: 'carnivore',
+    desc: '트라이아스기 후기의 소형 육식 공룡. 가볍고 날렵한 체형으로 무리지어 사냥했다. 북미에서 수천 개의 화석이 집단으로 발견되었다.' },
+  { id: 'lesothosaurus', ko: '레소토사우루스', en: 'Lesothosaurus', rarity: 'common', diet: 'herbivore',
+    desc: '쥐라기 초기 아프리카에 살았던 작은 초식 공룡. 두 발로 빠르게 달리며 포식자를 피했다. 이빨 구조로 보아 식물의 잎을 주로 먹었다.' },
+  { id: 'stegosaurus', ko: '스테고사우루스', en: 'Stegosaurus', rarity: 'common', diet: 'herbivore',
+    desc: '등에 큰 골판을 가진 대표적인 초식 공룡. 꼬리의 뾰족한 가시(타고미저)로 방어했다. 뇌 크기가 호두만 했다는 유명한 이야기의 주인공.' },
+  { id: 'parasaurolophus', ko: '파라사우롤로푸스', en: 'Parasaurolophus', rarity: 'common', diet: 'herbivore',
+    desc: '머리 뒤로 길게 뻗은 볏이 특징. 이 볏으로 나팔 같은 소리를 내어 동료와 소통했을 것으로 추정된다. 백악기 후기 북미에서 서식했다.' },
+  { id: 'iguanodon', ko: '이구아노돈', en: 'Iguanodon', rarity: 'common', diet: 'herbivore',
+    desc: '역사상 두 번째로 이름이 붙은 공룡. 엄지손가락의 큰 발톱 스파이크가 특징이며, 두 발과 네 발 모두로 이동할 수 있었다.' },
+  { id: 'dilophosaurus', ko: '딜로포사우루스', en: 'Dilophosaurus', rarity: 'common', diet: 'carnivore',
+    desc: '머리에 두 개의 반원형 볏을 가진 초기 대형 육식 공룡. 영화에서 독을 뿜는 것으로 유명하지만 실제로는 그렇지 않았다.' },
+  { id: 'compsognathus', ko: '콤프소그나투스', en: 'Compsognathus', rarity: 'common', diet: 'carnivore',
+    desc: '닭만한 크기의 소형 육식 공룡. 쥐라기 후기 유럽에 서식했으며, 도마뱀과 곤충을 사냥했다. 한때 가장 작은 공룡으로 알려졌었다.' },
+  { id: 'dimorphodon', ko: '디모르포돈', en: 'Dimorphodon', rarity: 'common', diet: 'flyer',
+    desc: '큰 머리와 짧은 날개를 가진 쥐라기 초기 익룡. 두 종류의 이빨을 가져 "두 형태의 이빨"이라는 뜻의 이름이 붙었다.' },
+  { id: 'rhamphorhynchus', ko: '람포린쿠스', en: 'Rhamphorhynchus', rarity: 'common', diet: 'flyer',
+    desc: '긴 꼬리 끝에 다이아몬드형 막을 가진 익룡. 물 위를 낮게 날며 물고기를 잡았다. 쥐라기 후기 유럽의 석회암에서 완벽한 화석이 발견되었다.' },
+  { id: 'ichthyosaurus', ko: '익티오사우루스', en: 'Ichthyosaurus', rarity: 'common', diet: 'aquatic',
+    desc: '돌고래를 닮은 해양 파충류. 큰 눈으로 깊은 바다에서도 사냥할 수 있었다. 새끼를 물속에서 낳는 태생이었다는 화석 증거가 있다.' },
+
+  // RARE (11)
+  { id: 'triceratops', ko: '트리케라톱스', en: 'Triceratops', rarity: 'rare', diet: 'herbivore',
+    desc: '세 개의 뿔과 거대한 프릴(목 방패)로 유명한 초식 공룡. 티라노사우루스와 같은 시대에 살았으며, 뿔로 맞서 싸운 흔적이 화석에 남아있다.' },
+  { id: 'ankylosaurus', ko: '안킬로사우루스', en: 'Ankylosaurus', rarity: 'rare', diet: 'herbivore',
+    desc: '전신이 골판 갑옷으로 덮인 걸어다니는 탱크. 꼬리 끝의 곤봉으로 포식자의 다리뼈를 부술 수 있었다. 백악기 최강의 방어 생물.' },
+  { id: 'pachycephalosaurus', ko: '파키케팔로사우루스', en: 'Pachycephalosaurus', rarity: 'rare', diet: 'herbivore',
+    desc: '두개골이 25cm 두께로 매우 두꺼운 "두꺼운 머리 도마뱀". 머리를 부딪혀 싸웠을 것이라는 설이 유명하지만, 너무 두꺼워 충격이 분산되었을 수도 있다.' },
+  { id: 'allosaurus', ko: '알로사우루스', en: 'Allosaurus', rarity: 'rare', diet: 'carnivore',
+    desc: '쥐라기 후기 최상위 포식자. 티라노와 비슷하지만 더 날렵하고 앞다리가 길었다. 무리 사냥으로 자신보다 큰 용각류도 공격했을 것으로 추정된다.' },
+  { id: 'carnotaurus', ko: '카르노타우루스', en: 'Carnotaurus', rarity: 'rare', diet: 'carnivore',
+    desc: '눈 위에 악마 같은 뿔이 달린 육식 공룡. 극도로 짧은 앞다리가 특징이며 빠른 속도로 질주할 수 있었다. 남미 파타고니아에서 발견되었다.' },
+  { id: 'pteranodon', ko: '프테라노돈', en: 'Pteranodon', rarity: 'rare', diet: 'flyer',
+    desc: '날개 폭 7미터의 거대 익룡. 이빨이 없이 긴 부리로 물고기를 잡아먹었다. 뒤로 뻗은 큰 볏은 비행 중 균형을 잡는 역할을 했다.' },
+  { id: 'plesiosaurus', ko: '플레시오사우루스', en: 'Plesiosaurus', rarity: 'rare', diet: 'aquatic',
+    desc: '긴 목과 작은 머리, 넓은 지느러미를 가진 해양 파충류. 네스호 괴물의 모델이 된 생물. 네 개의 지느러미로 물속을 우아하게 헤엄쳤다.' },
+  { id: 'kronosaurus', ko: '크로노사우루스', en: 'Kronosaurus', rarity: 'rare', diet: 'aquatic',
+    desc: '거대한 머리와 강력한 턱을 가진 해양 파충류. 이름은 그리스 신화의 거인 크로노스에서 따왔다. 바다의 최상위 포식자로 군림했다.' },
+  { id: 'dryosaurus', ko: '드라이오사우루스', en: 'Dryosaurus', rarity: 'rare', diet: 'herbivore',
+    desc: '참나무 도마뱀이라는 뜻의 작고 빠른 초식 공룡. 쥐라기 후기에 무리지어 숲속을 누비며 양치식물과 침엽수 잎을 먹었다.' },
+  { id: 'scutellosaurus', ko: '스쿠텔로사우루스', en: 'Scutellosaurus', rarity: 'rare', diet: 'herbivore',
+    desc: '작은 방패라는 뜻의 이름처럼 등에 작은 골편이 촘촘히 박힌 초기 장순류. 쥐라기 초기 두 발로 달리며 포식자를 피했다.' },
+  { id: 'psittacosaurus', ko: '프시타코사우루스', en: 'Psittacosaurus', rarity: 'rare', diet: 'herbivore',
+    desc: '앵무새 도마뱀이라는 뜻으로 부리가 앵무새를 닮았다. 꼬리에 강모 같은 구조물이 있었으며, 매우 잘 보존된 화석 덕분에 피부색까지 복원되었다.' },
+
+  // EPIC (10)
+  { id: 'brachiosaurus', ko: '브라키오사우루스', en: 'Brachiosaurus', rarity: 'epic', diet: 'herbivore',
+    desc: '기린처럼 앞다리가 뒷다리보다 긴 거대 용각류. 목을 높이 들어 나무 꼭대기의 잎을 먹었다. 영화 쥬라기 공원에서 처음 등장하는 장면이 유명하다.' },
+  { id: 'stegoceras', ko: '스테고케라스', en: 'Stegoceras', rarity: 'epic', diet: 'herbivore',
+    desc: '파키케팔로사우루스의 소형 친척. 돔 모양의 두개골로 머리박치기를 했을 것으로 추정된다. 백악기 후기 북미에서 발견되었다.' },
+  { id: 'spinosaurus', ko: '스피노사우루스', en: 'Spinosaurus', rarity: 'epic', diet: 'carnivore',
+    desc: '등에 거대한 돛을 가진 역대 최대 육식 공룡. 반수생으로 물속에서 물고기를 잡았다. 티라노사우루스보다 더 길었지만 체중은 더 가벼웠을 수 있다.' },
+  { id: 'baryonyx', ko: '바리오닉스', en: 'Baryonyx', rarity: 'epic', diet: 'carnivore',
+    desc: '무거운 발톱이라는 뜻. 엄지발톱이 30cm나 되며 물고기를 낚아채는 데 사용했다. 뱃속에서 물고기 비늘 화석이 발견되어 식성이 확인되었다.' },
+  { id: 'quetzalcoatlus', ko: '케찰코아틀루스', en: 'Quetzalcoatlus', rarity: 'epic', diet: 'flyer',
+    desc: '날개 폭 10~12미터, 역대 최대의 비행 생물. 이름은 아즈텍 신화의 깃털 달린 뱀 케찰코아틀에서 따왔다. 기린만한 크기로 땅 위를 걸어다녔다.' },
+  { id: 'mosasaurus', ko: '모사사우루스', en: 'Mosasaurus', rarity: 'epic', diet: 'aquatic',
+    desc: '백악기 바다의 최강자. 길이 17미터의 거대 해양 파충류로 상어, 거북, 다른 해양 파충류까지 잡아먹었다. 현대 왕도마뱀의 먼 친척이다.' },
+  { id: 'elasmosaurus', ko: '엘라스모사우루스', en: 'Elasmosaurus', rarity: 'epic', diet: 'aquatic',
+    desc: '전체 길이의 절반 이상이 목인 놀라운 해양 파충류. 72개의 목뼈로 물속에서 목을 자유롭게 움직여 물고기를 사냥했다.' },
+  { id: 'kentrosaurus', ko: '켄트로사우루스', en: 'Kentrosaurus', rarity: 'epic', diet: 'herbivore',
+    desc: '스테고사우루스의 아프리카 친척. 등의 골판이 뒤쪽으로 갈수록 뾰족한 스파이크로 변한다. 어깨에도 긴 가시가 있어 방어력이 매우 높았다.' },
+  { id: 'microraptor', ko: '미크로랍토르', en: 'Microraptor', rarity: 'epic', diet: 'carnivore',
+    desc: '네 개의 날개를 가진 소형 깃털 공룡. 나무 사이를 활공하며 사냥했다. 깃털이 무지개빛으로 빛났다는 것이 화석 분석으로 밝혀졌다.' },
+  { id: 'oviraptor', ko: '오비랍토르', en: 'Oviraptor', rarity: 'epic', diet: 'carnivore',
+    desc: '알 도둑이라는 억울한 이름을 가졌지만 실제로는 자기 알을 품고 있었다. 앵무새 같은 부리와 머리 볏이 특징이며 잡식성이었을 것으로 추정된다.' },
+
+  // LEGEND (6)
+  { id: 'argentinosaurus', ko: '아르젠티노사우루스', en: 'Argentinosaurus', rarity: 'legend', diet: 'herbivore',
+    desc: '역대 최대의 육상 동물 후보. 길이 35미터, 무게 70톤으로 추정된다. 아르헨티나에서 발견되었으며 한 걸음에 지진 같은 진동을 일으켰을 것이다.' },
+  { id: 'tyrannosaurus', ko: '티라노사우루스', en: 'Tyrannosaurus', rarity: 'legend', diet: 'carnivore',
+    desc: '폭군 도마뱀. 역사상 가장 유명한 공룡이자 최강의 육상 포식자. 6톤의 무게에 자동차를 부수는 악력을 지녔다. 의외로 깃털이 있었을 수 있다.' },
+  { id: 'giganotosaurus', ko: '기가노토사우루스', en: 'Giganotosaurus', rarity: 'legend', diet: 'carnivore',
+    desc: '티라노사우루스보다 약간 더 긴 남미의 거대 육식 공룡. 무리지어 아르젠티노사우루스 같은 거대 용각류를 사냥했을 것으로 추정된다.' },
+  { id: 'velociraptor', ko: '벨로키랍토르', en: 'Velociraptor', rarity: 'legend', diet: 'carnivore',
+    desc: '빠른 약탈자. 실제로는 칠면조 크기였지만 영화의 영향으로 유명해졌다. 발톱의 낫 같은 갈고리 발톱으로 먹이를 붙잡아 제압했다.' },
+  { id: 'tupuxuara', ko: '투푸수아라', en: 'Tupuxuara', rarity: 'legend', diet: 'flyer',
+    desc: '화려한 반원형 머리 볏을 가진 대형 익룡. 브라질에서 발견되었으며 볏은 과시용으로 사용되었을 것이다. 날개 폭 5미터 이상의 우아한 비행가.' },
+  { id: 'therizinosaurus', ko: '테리지노사우루스', en: 'Therizinosaurus', rarity: 'legend', diet: 'herbivore',
+    desc: '70cm짜리 낫 같은 발톱을 가진 가장 기괴한 공룡. 육식 공룡 계통이지만 초식으로 전환했다. 거대한 발톱은 나뭇가지를 끌어당기는 데 사용했다.' },
+
+  // HIDDEN (3)
+  { id: 'hidden_1', ko: '???', en: '???', rarity: 'hidden', diet: 'special',
+    desc: '직접 뽑아서 확인하세요! 성체로 성장하면 전설의 존재로 변신합니다.', transform: '???' },
+  { id: 'hidden_2', ko: '???', en: '???', rarity: 'hidden', diet: 'special',
+    desc: '직접 뽑아서 확인하세요! 성체로 성장하면 전설의 존재로 변신합니다.', transform: '???' },
+  { id: 'hidden_3', ko: '???', en: '???', rarity: 'hidden', diet: 'special',
+    desc: '직접 뽑아서 확인하세요! 성체로 성장하면 전설의 존재로 변신합니다.', transform: '???' },
+];
+
+const GITHUB_BASE = 'https://raw.githubusercontent.com/funjo-B/dinotama/master/public/assets/sprites';
+function spriteUrl(id, stage) {
+  return `${GITHUB_BASE}/${stage}/${id}/sprite_${stage}_idle_01.png`;
+}
+const STAGES = [
+  { key: 'baby', label: '유년기' },
+  { key: 'teen', label: '성장기' },
+  { key: 'adult', label: '성체' },
+];
+
+let activeFilter = 'all';
+
+function render() {
+  const filtered = activeFilter === 'all'
+    ? SPECIES
+    : SPECIES.filter(s => s.rarity === activeFilter);
+
+  const grid = document.getElementById('dinoGrid');
+  grid.innerHTML = filtered.map(s => {
+    const color = RARITY_COLORS[s.rarity];
+    const dietLabel = DIET_LABELS[s.diet] || s.diet;
+    const rarityLabel = RARITY_LABELS[s.rarity];
+
+    const spritesHtml = s.rarity === 'hidden'
+      ? `<div class="card-sprites">
+          ${STAGES.map(st => `<div class="card-sprite" style="border:1px solid ${color}33">
+            <span style="font-size:28px">❓</span>
+            <span class="stage-label">${st.label}</span>
+          </div>`).join('')}
+        </div>`
+      : `<div class="card-sprites">
+          ${STAGES.map(st => `<div class="card-sprite" style="border:1px solid ${color}33">
+            <img src="${spriteUrl(s.id, st.key)}" alt="${s.ko} ${st.label}"
+              onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('afterbegin','<span style=font-size:20px>🦕</span>')" />
+            <span class="stage-label">${st.label}</span>
+          </div>`).join('')}
+        </div>`;
+
+    return `
+      <div class="card rc-${s.rarity}">
+        <div class="card-top">
+          ${spritesHtml}
+          <div class="card-info">
+            <div class="card-name">${s.ko}</div>
+            <div class="card-name-en">${s.en}</div>
+            <div class="card-badges">
+              <span class="badge badge-rarity" style="color:${color}; border-color:${color}44">${rarityLabel}</span>
+              <span class="badge badge-diet">${dietLabel}</span>
+              ${s.transform ? `<span class="transform-badge">🔥 → ${s.transform}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="card-desc">${s.desc}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Stats
+  const statsBar = document.getElementById('statsBar');
+  const count = filtered.length;
+  const total = SPECIES.length;
+  statsBar.innerHTML = activeFilter === 'all'
+    ? `전체 <span>${total}종</span>`
+    : `${RARITY_LABELS[activeFilter]} <span>${count}종</span> / 전체 ${total}종`;
+}
+
+function initFilter() {
+  const container = document.getElementById('filter');
+  const rarities = [
+    { key: 'all', label: '전체', color: '#e2e8f0' },
+    { key: 'common', label: '★ Common', color: '#9ca3af' },
+    { key: 'rare', label: '★★ Rare', color: '#60a5fa' },
+    { key: 'epic', label: '★★★ Epic', color: '#c084fc' },
+    { key: 'legend', label: '★★★★ Legend', color: '#fbbf24' },
+    { key: 'hidden', label: '✦ Hidden', color: '#ff6b6b' },
+  ];
+
+  container.innerHTML = rarities.map(r =>
+    `<button class="filter-btn ${r.key === activeFilter ? 'active' : ''} rc-${r.key}"
+      style="--rc: ${r.color}"
+      onclick="setFilter('${r.key}')">${r.label}</button>`
+  ).join('');
+}
+
+function setFilter(key) {
+  activeFilter = key;
+  initFilter();
+  render();
+}
+
+initFilter();
+render();
+
+// Sprite hover preview
+const preview = document.getElementById('spritePreview');
+const previewImg = document.getElementById('previewImg');
+const previewLabel = document.getElementById('previewLabel');
+
+document.addEventListener('mouseover', (e) => {
+  const sprite = e.target.closest('.card-sprite');
+  if (!sprite) return;
+  const img = sprite.querySelector('img');
+  if (!img || !img.src) return;
+
+  previewImg.src = img.src;
+  previewLabel.textContent = sprite.querySelector('.stage-label')?.textContent || '';
+  preview.style.display = 'flex';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (preview.style.display !== 'flex') return;
+  const x = Math.min(e.clientX + 16, window.innerWidth - 200);
+  const y = Math.min(e.clientY - 90, window.innerHeight - 200);
+  preview.style.left = x + 'px';
+  preview.style.top = Math.max(8, y) + 'px';
+});
+
+document.addEventListener('mouseout', (e) => {
+  const sprite = e.target.closest('.card-sprite');
+  if (!sprite) return;
+  const related = e.relatedTarget;
+  if (related && sprite.contains(related)) return;
+  preview.style.display = 'none';
+});
+</script>
+
+</body>
+</html>
