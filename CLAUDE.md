@@ -12,7 +12,7 @@ Windows/macOS 모니터 구석에 항상 떠있는 공룡 다마고치 데스크
 - **Calendar**: Google Calendar API
 - **Ad Reward**: Firebase Functions (v2) + Firebase Hosting
 - **Notification**: node-notifier + custom UI
-- **Animation**: Sprite sheets (128×128px)
+- **Animation**: Sprite sheets (72×72px)
 - **i18n**: 자체 구현 (i18n.ts + useT 훅, 한/영)
 - **Build**: electron-builder (Windows NSIS / macOS DMG)
 
@@ -28,7 +28,7 @@ Main Process (Electron)
 └── Auth (OAuth flow + token persistence)
 
 Renderer Process (React)
-├── DinoCanvas (sprite animation, 128px)
+├── DinoCanvas (sprite animation, 72px)
 ├── Game Logic (Zustand store)
 │   ├── Growth FSM (baby→teen→adult)
 │   ├── Gacha System (5 rarity + pity)
@@ -48,7 +48,7 @@ Firebase Backend
 ```
 
 ## Key Conventions
-- Sprite naming: `sprite_<stage>_<emotion>_<frame>.png` (128×128px)
+- Sprite naming: `sprite_<stage>_<emotion>_<frame>.png` (128×72px)
 - Stages: `baby`, `teen`, `adult` (알 단계 없음)
 - Emotions: `idle`, `happy`, `sad`, `hungry`, `sleepy`, `excited`
 - IPC channels prefixed with `dino:`
@@ -67,6 +67,12 @@ npm run build:mac    # macOS DMG
 npm run lint         # ESLint
 npm run test         # Vitest
 ```
+
+## 테스트 규칙
+- **매 대화 시작 시** `npx vitest run`을 실행하여 전체 테스트 통과 여부 확인
+- 기능 변경/추가 후 관련 테스트가 깨지면 반드시 수정 후 커밋
+- 새 기능 추가 시 해당 로직에 대한 테스트도 함께 작성
+- 테스트 파일 위치: 소스 파일과 같은 디렉토리에 `*.test.ts`
 
 ## 커밋 & 푸시 규칙
 사용자가 "커밋푸시" 또는 "커밋 및 푸시" 요청 시 아래 순서로 실행:

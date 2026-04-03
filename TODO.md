@@ -201,8 +201,8 @@
 
 ### 🟡 3순위 — 품질 & 안정성
 
-- [ ] ESLint / Prettier 설정 (.eslintrc.js + .prettierrc)
-- [ ] growthFSM / dinoStore / 가챠 확률 단위 테스트 (Vitest)
+- [x] ESLint / Prettier 설정 (eslint.config.js flat config + .prettierrc)
+- [x] 단위 테스트 56개 (gacha 확률/천장/종풀, species 변신/무결성, growthFSM 진화, emotionEngine 감정판정, statDecay 스탯감소)
 - [x] Firebase 동기화 실패 시 재시도 (withRetry 적용 완료)
 - [x] Firebase 동기화 실패 시 에러 UI (SyncStatusIndicator 컴포넌트)
 
@@ -241,7 +241,7 @@
 - **문서**: ✅ 스프라이트 가이드, 개편 예정 문서 (docs/REVAMP_PLAN.md)
 - **Stripe**: ⚠️ 스캐폴드만
 - **AdSense**: ⚠️ 승인 전 (placeholder 광고)
-- **테스트/린트**: ❌ 미구현
+- **테스트/린트**: ✅ ESLint v9 + Prettier + Vitest 56개 테스트 (매 대화 시작 시 자동 실행)
 
 ## 환경 설정 메모
 - `.env` 파일은 git에 포함 안됨 — `.env.example` 복사 후 키값 채워야 함
