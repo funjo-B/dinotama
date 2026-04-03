@@ -2,9 +2,14 @@ import type { DinoRarity, DinoSpeciesId, DinoSpeciesDef, DinoStage } from '../ty
 
 // 실제 아트 스프라이트가 있는 종 목록 — 이 종은 imageRendering: 'auto' (스무스) 로 렌더링
 export const REAL_SPRITE_SPECIES = new Set<DinoSpeciesId>([
-  'tyrannosaurus',
-  'tupuxuara',
-  'gallimimus',
+  'gallimimus', 'coelophysis', 'lesothosaurus', 'stegosaurus', 'parasaurolophus',
+  'iguanodon', 'dilophosaurus', 'compsognathus', 'dimorphodon', 'rhamphorhynchus',
+  'ichthyosaurus', 'triceratops', 'ankylosaurus', 'pachycephalosaurus', 'allosaurus',
+  'carnotaurus', 'pteranodon', 'plesiosaurus', 'kronosaurus', 'dryosaurus',
+  'scutellosaurus', 'psittacosaurus', 'brachiosaurus', 'stegoceras', 'spinosaurus',
+  'baryonyx', 'quetzalcoatlus', 'mosasaurus', 'elasmosaurus', 'kentrosaurus',
+  'microraptor', 'oviraptor', 'argentinosaurus', 'tyrannosaurus', 'giganotosaurus',
+  'velociraptor', 'tupuxuara', 'therizinosaurus', 'chicken', 'carp', 'lizard',
 ]);
 
 // 멀티프레임 스프라이트 정보 — `종_이모션` 키로 프레임 수 지정 (기본 1)
