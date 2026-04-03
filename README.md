@@ -2,6 +2,8 @@
 
 > Windows/macOS 모니터 구석에 항상 떠있는 공룡 다마고치 데스크탑 앱
 
+**Live**: https://dinotama-dff44.web.app/
+
 ## Features
 
 ### 공룡 육성
