@@ -116,15 +116,33 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 
 ## Window Architecture
 - 공룡 창: 320x280 고정 (transparent, always-on-top)
-- 패널(TODO/컬렉션/가챠/설정): 별도 BrowserWindow로 공룡 창 좌측에 생성
+- 패널(TODO/컬렉션/가챠/설정/상점): 별도 BrowserWindow로 공룡 창 좌측에 생성
 - 패널↔메인 데이터 동기화: IPC `dino:get-store-snapshot` + `dino:panel-action`
 
 ## Firebase Backend
 - 프로젝트: `dinotama-dff44`
 - Hosting: `https://dinotama-dff44.web.app`
-- Functions (v2, us-central1): `claimReward`, `validateReward`
-- Secret: `REWARD_HMAC_SECRET` (Firebase Secret Manager)
+- Functions (v2, us-central1): `claimReward`, `validateReward`, `createCheckoutSession`, `stripeWebhook`
+- Secrets (Firebase Secret Manager):
+  - `REWARD_HMAC_SECRET` — 광고 보상 HMAC 서명
+  - `STRIPE_SECRET_KEY` — Stripe API 시크릿 키
+  - `STRIPE_WEBHOOK_SECRET` — Stripe Webhook 서명 검증
 - 배포: `npx firebase-tools deploy --only hosting,functions`
+- Firestore 규칙: `npx firebase-tools deploy --only firestore:rules`
+
+## Stripe 결제 시스템
+- 상품 6종: 코인 팩 3종 (₩1,200/₩5,500/₩12,000) + 프리미엄 알 3종 (₩2,500/₩11,000/₩22,000)
+- 상품 정의: `src/shared/constants/shop.ts` + `functions/src/index.ts` (양쪽 동기화 필요)
+- 결제 흐름: ShopPanel → createCheckoutSession(Firebase Function) → Stripe Checkout → stripeWebhook → Firestore 재화 지급
+- 주문 추적: Firestore `orders/{sessionId}` (status: pending → completed)
+- **활성화 절차**:
+  1. Stripe 계정 생성: https://dashboard.stripe.com
+  2. Secret Key 등록: `firebase functions:secrets:set STRIPE_SECRET_KEY`
+  3. Webhook Secret 등록: `firebase functions:secrets:set STRIPE_WEBHOOK_SECRET`
+  4. Stripe Dashboard → Webhooks → 엔드포인트 추가: `https://us-central1-dinotama-dff44.cloudfunctions.net/stripeWebhook`
+     - 이벤트: `checkout.session.completed`
+  5. Functions 배포: `npx firebase-tools deploy --only functions --project dinotama-dff44`
+  6. Hosting 배포 (결제 결과 페이지): `npx firebase-tools deploy --only hosting --project dinotama-dff44`
 
 ## Agent Roles
 - **pm-agent**: CLAUDE.md/TODO.md 관리, 스프린트 계획, GitHub Issues

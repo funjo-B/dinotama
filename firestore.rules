@@ -23,6 +23,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 주문 내역 — 본인 것만 읽기, Cloud Functions만 쓰기
+    match /orders/{orderId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
     // 보상 클레임 — 본인 것만 읽기, Cloud Functions만 쓰기
     match /rewardClaims/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;

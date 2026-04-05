@@ -42,6 +42,9 @@ const dinoAPI = {
   readClipboard: () => clipboard.readText(),
   clearClipboard: () => clipboard.writeText(''),
 
+  // External links (Stripe checkout 등)
+  openExternal: (url: string) => ipcRenderer.invoke('dino:open-external', url),
+
   // Auth (Google login → Firebase + Calendar)
   authLogin: () => ipcRenderer.invoke('dino:auth-login'),
   authLogout: () => ipcRenderer.invoke('dino:auth-logout'),

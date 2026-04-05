@@ -4,6 +4,12 @@ import { AD_REWARD_URL } from '../shared/constants/gacha';
 const VALIDATE_URL = 'https://us-central1-dinotama-dff44.cloudfunctions.net/validateReward';
 
 export function setupRewardIPC() {
+  // Open external URL in system browser
+  ipcMain.handle('dino:open-external', (_event, url: string) => {
+    shell.openExternal(url);
+    return true;
+  });
+
   // Open ad reward page in browser
   ipcMain.handle('dino:open-ad-reward', (_event, uid: string) => {
     const url = `${AD_REWARD_URL}?uid=${encodeURIComponent(uid)}`;

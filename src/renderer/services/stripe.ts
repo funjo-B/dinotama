@@ -1,50 +1,37 @@
-import { loadStripe, type Stripe } from '@stripe/stripe-js';
+import { SHOP_PRODUCTS, type ShopProduct } from '@shared/constants';
 
-let stripePromise: Promise<Stripe | null> | null = null;
+const FUNCTIONS_BASE = 'https://us-central1-dinotama-dff44.cloudfunctions.net';
 
-// Replace with actual publishable key
-const STRIPE_PUBLISHABLE_KEY = '';
+export { SHOP_PRODUCTS, type ShopProduct };
 
-function getStripe() {
-  if (!stripePromise && STRIPE_PUBLISHABLE_KEY) {
-    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+/** Stripe Checkout 세션을 생성하고 결제 페이지 URL 반환 */
+export async function createCheckout(uid: string, productId: string): Promise<{ url: string; sessionId: string } | null> {
+  try {
+    const res = await fetch(`${FUNCTIONS_BASE}/createCheckoutSession`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, productId }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error('[Stripe] Checkout failed:', err);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('[Stripe] Network error:', err);
+    return null;
   }
-  return stripePromise;
 }
 
-export interface PremiumEggProduct {
-  id: string;
-  name: string;
-  priceId: string;
-  amount: number;       // in cents
-  eggCount: number;     // number of premium eggs
+/** 결제 페이지를 외부 브라우저로 열기 */
+export async function openCheckout(uid: string, productId: string): Promise<boolean> {
+  const result = await createCheckout(uid, productId);
+  if (!result?.url) return false;
+
+  // Electron에서 외부 브라우저로 열기
+  window.dinoAPI?.openExternal?.(result.url);
+  return true;
 }
-
-export const PREMIUM_PRODUCTS: PremiumEggProduct[] = [
-  { id: 'egg_1', name: '고급알 1개', priceId: '', amount: 100, eggCount: 1 },
-  { id: 'egg_5', name: '고급알 5개', priceId: '', amount: 450, eggCount: 5 },
-  { id: 'egg_11', name: '고급알 11개 (1개 보너스)', priceId: '', amount: 900, eggCount: 11 },
-];
-
-/**
- * Redirect to Stripe Checkout for premium egg purchase.
- * In production, the checkout session should be created server-side.
- * This is a simplified client-only flow for development.
- */
-export async function purchasePremiumEggs(product: PremiumEggProduct): Promise<boolean> {
-  const stripe = await getStripe();
-  if (!stripe) {
-    console.error('[Stripe] Not initialized — missing publishable key');
-    return false;
-  }
-
-  // In production: call your backend to create a checkout session
-  // const response = await fetch('/api/create-checkout-session', { ... });
-  // const { sessionId } = await response.json();
-  // await stripe.redirectToCheckout({ sessionId });
-
-  console.log(`[Stripe] Would purchase: ${product.name} (${product.amount} cents)`);
-  return false;
-}
-
-export { getStripe };

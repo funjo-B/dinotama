@@ -19,6 +19,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { useSettingsStore } from './stores/settingsStore';
 import { useT, useSpeciesName } from './hooks/useT';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
+import { ShopPanel } from './components/ShopPanel';
 
 const TODO_STORAGE_KEY = 'dinotama-todos';
 const NOTIFY_GLOBAL_KEY = 'dinotama-todo-notify';
@@ -116,6 +117,9 @@ function PanelApp() {
   }
   if (panelType === 'settings') {
     return <SettingsPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} />;
+  }
+  if (panelType === 'shop') {
+    return <ShopPanel isOpen={true} onClose={() => window.dinoAPI?.closePanel?.()} userUid={storeData?.uid || null} />;
   }
   return null;
 }

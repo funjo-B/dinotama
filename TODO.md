@@ -193,11 +193,16 @@
 - **담당**: game-agent / asset-agent
 
 #### Stripe 결제 연동
-- [ ] Stripe 계정 + publishable key 발급
-- [ ] 고급알 상품 3종 priceId 설정
-- [ ] 백엔드 서버 구축 (Checkout Session 생성)
-- [ ] 결제 완료 webhook → 가챠 트리거 연결
-- **담당**: game-agent
+- [x] 상품 6종 구성 (코인 팩 3종 + 프리미엄 알 팩 3종)
+- [x] Firebase Functions: createCheckoutSession + stripeWebhook
+- [x] ShopPanel UI + 가챠 패널 상점 버튼
+- [x] Firestore orders 컬렉션 + 보안 규칙
+- [x] 결제 성공/취소 페이지 (hosting)
+- [x] 상점 테스트 8개 (가성비 검증 포함)
+- [ ] Stripe 계정 생성 + Secret Key / Webhook Secret 등록
+- [ ] Firebase Functions 배포 (Stripe 함수 포함)
+- [ ] Stripe Dashboard에서 Webhook 엔드포인트 등록
+- **담당**: dev-agent
 
 ### 🟡 3순위 — 품질 & 안정성
 
@@ -239,7 +244,7 @@
 - **TODO**: ✅ 클라우드 동기화, 매일 체크 초기화(자정 자동 감지), 알람 간격 설정
 - **웹사이트**: ✅ Firebase Hosting (랜딩 + 가이드 + 개인정보 + 이용약관 + 광고 보상 페이지)
 - **문서**: ✅ 스프라이트 가이드, 개편 예정 문서 (docs/REVAMP_PLAN.md)
-- **Stripe**: ⚠️ 스캐폴드만
+- **Stripe**: ✅ 상품 6종 + Checkout/Webhook 구현 완료 (Stripe 계정 등록 후 활성화 필요)
 - **AdSense**: ⚠️ 승인 전 (placeholder 광고)
 - **테스트/린트**: ✅ ESLint v9 + Prettier + Vitest 56개 테스트 (매 대화 시작 시 자동 실행)
 

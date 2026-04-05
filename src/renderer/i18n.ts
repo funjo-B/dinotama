@@ -125,6 +125,16 @@ export const translations = {
       ok: 'OK ✓',
     },
 
+    // ShopPanel
+    shop: {
+      title: '🛒 상점',
+      coinPacks: '코인 팩',
+      premiumEggs: '프리미엄 알',
+      loginRequired: '로그인 후 이용 가능합니다',
+      checkoutFailed: '결제 페이지를 열 수 없습니다',
+      footer: '결제는 Stripe를 통해 안전하게 처리됩니다',
+    },
+
     // SettingsPanel
     settings: {
       title: '환경설정',
@@ -259,6 +269,15 @@ export const translations = {
       minutesUntil: (n: number) => `📅 In ${n} min`,
       snooze: '5 min later ⏰',
       ok: 'OK ✓',
+    },
+
+    shop: {
+      title: '🛒 Shop',
+      coinPacks: 'Coin Packs',
+      premiumEggs: 'Premium Eggs',
+      loginRequired: 'Please log in first',
+      checkoutFailed: 'Could not open checkout page',
+      footer: 'Payments are securely processed via Stripe',
     },
 
     settings: {

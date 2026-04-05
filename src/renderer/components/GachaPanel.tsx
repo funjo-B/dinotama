@@ -183,6 +183,25 @@ export function GachaPanel({ isOpen, onClose, onPull, userUid }: GachaPanelProps
               : t.gachaPanel.adRewardDone
           }
         </button>
+
+        {/* Shop Button */}
+        <button
+          onClick={() => window.dinoAPI?.openPanel?.('shop')}
+          style={{
+            width: '100%',
+            padding: '9px 0',
+            border: '1px solid rgba(251,191,36,0.3)',
+            borderRadius: 8,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.15), rgba(249,115,22,0.15))',
+            color: '#fbbf24',
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: 'pointer',
+            marginTop: 4,
+          }}
+        >
+          🛒 {t.shop.title}
+        </button>
       </div>
 
       {/* Pity info */}
