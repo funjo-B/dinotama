@@ -4,6 +4,15 @@
 
 **Live**: https://dinotama-dff44.web.app/
 
+## Download
+
+| OS | 다운로드 |
+|----|----------|
+| Windows | [DinoTama Setup.exe](https://github.com/funjo-B/dinotama/releases/latest/download/DinoTama.Setup.0.1.0.exe) |
+| macOS | [DinoTama.dmg](https://github.com/funjo-B/dinotama/releases/latest/download/DinoTama-0.1.0-arm64.dmg) |
+
+> 모든 릴리즈: [GitHub Releases](https://github.com/funjo-B/dinotama/releases)
+
 ## Features
 
 ### 공룡 육성
@@ -143,6 +152,18 @@ public/assets/sprites/{stage}/{species}/sprite_{stage}_{emotion}_{frame}.png
 - **패널 창**: 별도 BrowserWindow, 공룡 창 좌측에 생성
 - **패널 종류**: TODO, 컬렉션, 가챠, 환경설정
 - **데이터 동기화**: IPC `dino:get-store-snapshot` + `dino:panel-action`
+
+## CI/CD
+
+GitHub Actions로 Windows/macOS 자동 빌드 + 릴리즈:
+
+```bash
+# 새 버전 배포
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+태그 push 시 자동으로 `.exe` + `.dmg` 빌드 → GitHub Releases에 업로드됩니다.
 
 ## Progress
 
