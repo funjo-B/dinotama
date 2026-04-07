@@ -72,8 +72,16 @@
       "icon": "public/assets/icons/icon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "public/assets/icons/icon.icns"
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "public/assets/icons/icon.icns",
+      "category": "public.app-category.games",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "nsis": {
       "oneClick": false,

@@ -4,6 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Build platform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
 
 jobs:
   build:
@@ -15,7 +26,7 @@ jobs:
             artifact_glob: release/*.exe
           - os: macos-latest
             build_cmd: npm run build && npx electron-builder --mac --publish never
-            artifact_glob: release/*.dmg
+            artifact_glob: release/*.{dmg,zip}
 
     runs-on: ${{ matrix.os }}
 
