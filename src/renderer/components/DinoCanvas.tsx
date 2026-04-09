@@ -3,7 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDinoStore } from '../stores/dinoStore';
 import { REAL_SPRITE_SPECIES, SPRITE_FRAME_COUNTS, HIDDEN_TRANSFORMS } from '@shared/constants';
 import type { DinoEmotion } from '@shared/types';
+import type { DinoStage } from '@shared/types';
 import type { TargetAndTransition } from 'framer-motion';
+
+const STAGE_SPRITE_SIZE: Record<DinoStage, number> = {
+  egg: 64,
+  baby: 64,
+  teen: 96,
+  adult: 144,
+};
 
 const EMOTION_ANIMATIONS: Record<DinoEmotion, TargetAndTransition> = {
   idle: {
@@ -75,6 +83,7 @@ export function DinoCanvas() {
   const frameStr = String(frame).padStart(2, '0');
   // idle variants use 'idle' sprite
   const spriteEmotion = emotion.startsWith('idle') ? 'idle' : emotion;
+  const spriteSize = activeDino ? STAGE_SPRITE_SIZE[activeDino.stage] : 128;
 
   return (
     <AnimatePresence mode="wait">
@@ -85,7 +94,7 @@ export function DinoCanvas() {
           width: 128,
           height: 128,
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'center',
         }}
       >
@@ -97,8 +106,8 @@ export function DinoCanvas() {
             <img
               src={`./assets/sprites/${activeDino.stage}/${spriteFolder}/sprite_${activeDino.stage}_${spriteEmotion}_${frameStr}.png`}
               alt={activeDino.name}
-              width={128}
-              height={128}
+              width={spriteSize}
+              height={spriteSize}
               style={{ imageRendering: REAL_SPRITE_SPECIES.has(activeDino.species) ? 'auto' : 'pixelated' }}
               draggable={false}
               onError={(e) => {
